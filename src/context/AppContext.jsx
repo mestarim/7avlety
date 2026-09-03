@@ -81,6 +81,7 @@ const initialBookings = [
 
 const initialSettings = {
   platformName: 'حفلتي | 7avelty',
+  platformSlogan: 'المنصة الموريتانية الأولى لحجز قاعات الأفراح وتجهيز المناسبات',
   currency: 'أوقية',
   phone: '+222 46 00 00 00',
   whatsapp: '+22246000000',
@@ -88,7 +89,18 @@ const initialSettings = {
   location: 'نواكشوط، تفرغ زينة، موريتانيا',
   commissionRate: 10,
   autoConfirmBookings: false,
-  maintenanceMode: false
+  maintenanceMode: false,
+  whatsappAlerts: true,
+  enablePwaBanner: true
+};
+
+// Safe helper for localStorage to catch QuotaExceededError
+const safeSetItem = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`LocalStorage quota warning for ${key}:`, e);
+  }
 };
 
 export const AppProvider = ({ children }) => {
@@ -168,8 +180,15 @@ export const AppProvider = ({ children }) => {
     return initialPromoCodes;
   });
 
-  // Categories & Packages
-  const [categories] = useState(defaultCategories);
+  // Categories State with LocalStorage persistence & CRUD
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('7avelty_categories');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return defaultCategories;
+  });
+
   const [packages] = useState(packagesData);
 
   // Settings State
@@ -181,25 +200,29 @@ export const AppProvider = ({ children }) => {
     return initialSettings;
   });
 
-  // Save to LocalStorage
+  // Save to LocalStorage with Safe Handling
   useEffect(() => {
-    localStorage.setItem('7avelty_listings', JSON.stringify(listings));
+    safeSetItem('7avelty_listings', listings);
   }, [listings]);
 
   useEffect(() => {
-    localStorage.setItem('7avelty_bookings', JSON.stringify(bookings));
+    safeSetItem('7avelty_bookings', bookings);
   }, [bookings]);
 
   useEffect(() => {
-    localStorage.setItem('7avelty_wishlist', JSON.stringify(wishlist));
+    safeSetItem('7avelty_wishlist', wishlist);
   }, [wishlist]);
 
   useEffect(() => {
-    localStorage.setItem('7avelty_promocodes', JSON.stringify(promoCodes));
+    safeSetItem('7avelty_promocodes', promoCodes);
   }, [promoCodes]);
 
   useEffect(() => {
-    localStorage.setItem('7avelty_settings', JSON.stringify(settings));
+    safeSetItem('7avelty_categories', categories);
+  }, [categories]);
+
+  useEffect(() => {
+    safeSetItem('7avelty_settings', settings);
   }, [settings]);
 
   // Wishlist Actions
@@ -360,6 +383,59 @@ export const AppProvider = ({ children }) => {
     showToast('تم حذف سجل الحجز', 'info');
   };
 
+  // Actions: Categories
+  const addCategory = (categoryData) => {
+    const newCat = {
+      ...categoryData,
+      id: Date.now(),
+      title: categoryData.title.trim(),
+      iconName: categoryData.iconName || 'Sparkles'
+    };
+    setCategories((prev) => [...prev, newCat]);
+    showToast(`تمت إضافة قسم "${newCat.title}" بنجاح!`);
+    return newCat;
+  };
+
+  const updateCategory = (id, updatedData) => {
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...updatedData } : c))
+    );
+    showToast('تم تحديث بيانات القسم بنجاح!');
+  };
+
+  const deleteCategory = (id) => {
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    showToast('تم حذف القسم', 'info');
+  };
+
+  // Actions: Reviews
+  const addReviewToListing = (listingId, reviewData) => {
+    setListings((prev) =>
+      prev.map((item) => {
+        if (item.id !== listingId) return item;
+        const currentReviews = item.reviews || [];
+        const newReview = {
+          id: `rev-${Date.now()}`,
+          author: reviewData.author || 'زائر كريم',
+          rating: Number(reviewData.rating) || 5,
+          comment: reviewData.comment || '',
+          date: new Date().toISOString().split('T')[0]
+        };
+        const updatedReviews = [newReview, ...currentReviews];
+        const avgRating = (
+          updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
+        ).toFixed(1);
+
+        return {
+          ...item,
+          rating: parseFloat(avgRating),
+          reviews: updatedReviews
+        };
+      })
+    );
+    showToast('شكراً لك! تم نشر تقييمك بنجاح ⭐', 'success');
+  };
+
   // Update Settings
   const updateSettings = (newSettings) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
@@ -389,11 +465,15 @@ export const AppProvider = ({ children }) => {
         addListing,
         updateListing,
         deleteListing,
+        addReviewToListing,
         bookings,
         addBooking,
         updateBookingStatus,
         deleteBooking,
         categories,
+        addCategory,
+        updateCategory,
+        deleteCategory,
         packages,
         settings,
         updateSettings,

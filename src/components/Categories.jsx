@@ -1,10 +1,19 @@
 import React from 'react';
 import { useApp } from '../context/useApp';
+import { getCategoryIcon } from '../data/mockData';
 
 const Categories = () => {
   const { categories, filterCategory, setFilterCategory } = useApp();
 
   const handleCategoryClick = (catTitle) => {
+    if (catTitle.includes('بكجات') || catTitle.includes('باقات')) {
+      const pkgEl = document.getElementById('packages');
+      if (pkgEl) {
+        pkgEl.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+    }
+
     setFilterCategory(catTitle);
     const el = document.getElementById('featured');
     if (el) {
@@ -30,7 +39,7 @@ const Categories = () => {
                 onClick={() => handleCategoryClick(cat.title)}
               >
                 <div className="category-icon">
-                  {cat.icon}
+                  {cat.icon || getCategoryIcon(cat.iconName)}
                 </div>
                 <h3 className="category-title">{cat.title}</h3>
                 <span className="category-action-text text-primary">تصفح العروض ←</span>

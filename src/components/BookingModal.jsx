@@ -101,6 +101,10 @@ const BookingModal = () => {
       return;
     }
 
+    const packageDiscount = bookingModalItem.packageSavings || 0;
+    const initialPrice = bookingModalItem.originalPrice || basePrice;
+    const totalDiscount = discountAmount + packageDiscount;
+
     const newBooking = addBooking({
       customerName: formData.customerName,
       phone: formData.phone,
@@ -109,9 +113,9 @@ const BookingModal = () => {
       city: formData.city || 'نواكشوط',
       date: formData.date,
       price: finalPrice,
-      originalPrice: basePrice,
-      discountAmount: discountAmount,
-      promoCode: appliedPromo ? appliedPromo.code : null,
+      originalPrice: initialPrice,
+      discountAmount: totalDiscount,
+      promoCode: appliedPromo ? appliedPromo.code : (packageDiscount > 0 ? 'خصم باقة شاملة' : null),
       paymentMethod: paymentMethod,
       paymentRef: paymentRef || (paymentMethod === 'cash' ? 'دفع عند المعاينة' : 'بانتظار التأكيد'),
       notes: formData.notes

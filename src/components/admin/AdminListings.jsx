@@ -50,7 +50,7 @@ const AVAILABLE_AMENITIES = [
 ];
 
 const AdminListings = () => {
-  const { listings, addListing, updateListing, deleteListing, settings, showToast } = useApp();
+  const { listings, addListing, updateListing, deleteListing, settings, showToast, categories } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -159,35 +159,72 @@ const AdminListings = () => {
       description: item.description || 'خدمة وتجهيزات متكاملة لإقامة أرقى المناسبات والأعراس في موريتانيا.',
       amenities: item.amenities || ['تكييف وتبريد مركزي', 'طاقم ضيافة وخدمة VIP'],
       isActive: item.isActive !== undefined ? item.isActive : true,
-      capacity: item.capacity || '350 شخص'
+      capacity: item.capacity ? String(typeof item.capacity === 'number' ? item.capacity : (parseInt(item.capacity, 10) || 350)) : '350'
     });
     setIsModalOpen(true);
   };
 
-  // Image Upload File Handler (converts local PC file to Base64)
-  const processImageFile = (file) => {
+  // High performance Canvas-based image compressor to protect LocalStorage quota
+  const compressImage = (file, maxWidth = 1200, quality = 0.75) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG format with specified quality
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  // Image Upload File Handler with Auto-Compression
+  const processImageFile = async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صالح (JPG, PNG, WebP)');
       return;
     }
 
-    // Limit to ~8MB
-    if (file.size > 8 * 1024 * 1024) {
-      alert('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 8 ميجابايت');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Data = event.target.result;
-      setFormData((prev) => ({ ...prev, image: base64Data }));
+    try {
+      if (showToast) {
+        showToast('جاري معالجة وضغط الصورة لسرعة التصفح...', 'info');
+      }
+      const compressedBase64 = await compressImage(file, 1200, 0.75);
+      setFormData((prev) => ({ ...prev, image: compressedBase64 }));
       setUploadedFileName(file.name);
       if (showToast) {
-        showToast(`تم تحميل الصورة "${file.name}" بنجاح!`, 'success');
+        showToast(`تم تحميل وضغط الصورة "${file.name}" بنجاح!`, 'success');
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      // Fallback
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData((prev) => ({ ...prev, image: event.target.result }));
+        setUploadedFileName(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleFileInputChange = (e) => {
@@ -240,8 +277,12 @@ const AdminListings = () => {
       return;
     }
 
+    // Numerical Price & Integer Capacity
+    const numericPriceVal = Number(formData.priceNumber) || 0;
+    const parsedCapacity = parseInt(formData.capacity, 10) || (formData.category.includes('قاعة') || formData.category.includes('فندق') ? 350 : 1);
+    
     // Formatted price
-    const formattedPrice = `${Number(formData.priceNumber).toLocaleString()} ${settings.currency}${formData.priceUnit ? ` / ${formData.priceUnit}` : ''}`;
+    const formattedPrice = `${numericPriceVal.toLocaleString()} ${settings.currency}${formData.priceUnit ? ` / ${formData.priceUnit}` : ''}`;
     const fullLocation = formData.detailedLocation.includes(formData.city)
       ? formData.detailedLocation
       : `${formData.city}، ${formData.detailedLocation}`;
@@ -249,14 +290,21 @@ const AdminListings = () => {
     const submissionPayload = {
       title: formData.title,
       category: formData.category,
+      city: formData.city || 'نواكشوط',
       location: fullLocation,
       price: formattedPrice,
+      numericPrice: numericPriceVal,
       badge: formData.badge,
       image: formData.image || PRESET_IMAGES[0].url,
+      images: editingListing?.images && editingListing.images.length > 0 
+        ? [formData.image, ...editingListing.images.filter(img => img !== formData.image).slice(0, 3)]
+        : [formData.image || PRESET_IMAGES[0].url],
       description: formData.description,
       amenities: formData.amenities,
-      capacity: formData.capacity,
-      isActive: formData.isActive
+      capacity: parsedCapacity,
+      isActive: formData.isActive,
+      rating: editingListing ? editingListing.rating : 5.0,
+      reviews: editingListing?.reviews || []
     };
 
     if (editingListing) {
@@ -495,12 +543,23 @@ const AdminListings = () => {
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                           >
-                            <option value="قاعات الأفراح">قاعات الأفراح</option>
-                            <option value="الفنادق والمؤتمرات">الفنادق والمؤتمرات</option>
-                            <option value="معدات صوت ودي جي">معدات صوت ودي جي</option>
-                            <option value="سيارات زفاف">سيارات زفاف</option>
-                            <option value="أواني ومعدات ضيافة">أواني ومعدات ضيافة</option>
-                            <option value="الهدايا والسلال">الهدايا والسلال</option>
+                            {categories && categories.length > 0 ? (
+                              categories.filter((c) => c.title !== 'بكجات متكاملة').map((cat) => (
+                                <option key={cat.id} value={cat.title}>
+                                  {cat.title}
+                                </option>
+                              ))
+                            ) : (
+                              <>
+                                <option value="قاعات الأفراح">قاعات الأفراح</option>
+                                <option value="الفنادق والمؤتمرات">الفنادق والمؤتمرات</option>
+                                <option value="معدات صوت ودي جي">معدات صوت ودي جي</option>
+                                <option value="سيارات زفاف">سيارات زفاف</option>
+                                <option value="أواني ومعدات ضيافة">أواني ومعدات ضيافة</option>
+                                <option value="الهدايا والسلال">الهدايا والسلال</option>
+                                <option value="تصوير وتوثيق">تصوير وتوثيق</option>
+                              </>
+                            )}
                           </select>
                         </div>
 

@@ -17,8 +17,10 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import Toast from './components/Toast';
 import WhatsAppFloatingBtn from './components/WhatsAppFloatingBtn';
 
+import { MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
+
 function MainAppContent() {
-  const { currentView } = useApp();
+  const { currentView, setCurrentView, settings } = useApp();
 
   if (currentView === 'admin') {
     return (
@@ -27,6 +29,45 @@ function MainAppContent() {
         <InvoiceModal />
         <Toast />
       </>
+    );
+  }
+
+  // Maintenance Mode Screen
+  if (settings.maintenanceMode) {
+    return (
+      <div className="maintenance-screen">
+        <div className="maintenance-card">
+          <div className="maintenance-icon-glow">
+            <Sparkles size={40} className="text-primary" />
+          </div>
+          <div className="logo" style={{ fontSize: '32px', marginBottom: '12px' }}>
+            7avelty <span style={{ color: 'var(--text-light)', fontSize: '20px', fontWeight: '400' }}>| حفلتي</span>
+          </div>
+          <h2>المنصة تحت أعمال التحديث والصيانة</h2>
+          <p className="text-muted">
+            نقوم حالياً بترقية خوادمنا وتجهيز باقات وعروض حصرية لمناسباتكم وأفراحكم في موريتانيا. سنعود لاستقبال الحجوزات قريباً جداً!
+          </p>
+
+          <div className="maintenance-actions">
+            <a
+              href={`https://wa.me/${(settings.whatsapp || '22246000000').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('السلام عليكم، أود الاستفسار عن حجوزات حفلتي.')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-primary"
+            >
+              <MessageCircle size={18} /> تواصل معنا عبر واتساب
+            </a>
+            <button
+              className="btn btn-outline"
+              onClick={() => setCurrentView('admin')}
+              title="دخول المشرف"
+            >
+              <ShieldCheck size={16} /> لوحة تحكم الإدارة
+            </button>
+          </div>
+        </div>
+        <Toast />
+      </div>
     );
   }
 

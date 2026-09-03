@@ -24,17 +24,36 @@ const ListingDetailsModal = () => {
     isWishlisted,
     toggleWishlist,
     isDateBooked,
-    getBookedDates
+    getBookedDates,
+    listings,
+    addReviewToListing
   } = useApp();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedDate, setSelectedDate] = useState('');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [newReview, setNewReview] = useState({ author: '', rating: 5, comment: '' });
 
   if (!detailsModalItem) return null;
 
-  const images = detailsModalItem.images && detailsModalItem.images.length > 0
-    ? detailsModalItem.images
-    : [detailsModalItem.image];
+  // Sync with live updated listing for realtime reviews
+  const currentListing = listings.find((l) => l.id === detailsModalItem.id) || detailsModalItem;
+  const reviewsList = currentListing.reviews || [];
+
+  const handleReviewSubmit = (e) => {
+    e.preventDefault();
+    if (!newReview.author.trim() || !newReview.comment.trim()) {
+      alert('يرجى ملء جميع حقول التقييم');
+      return;
+    }
+    addReviewToListing(detailsModalItem.id, newReview);
+    setNewReview({ author: '', rating: 5, comment: '' });
+    setShowReviewForm(false);
+  };
+
+  const images = currentListing.images && currentListing.images.length > 0
+    ? currentListing.images
+    : [currentListing.image];
 
   const handleNextImage = () => {
     setActiveImageIndex((prev) => (prev + 1) % images.length);
@@ -171,7 +190,7 @@ const ListingDetailsModal = () => {
           <div className="details-features-section">
             <h4>المزايا والخدمات المتضمنة:</h4>
             <div className="features-grid">
-              {(detailsModalItem.amenities || [
+              {(currentListing.amenities || [
                 'تكييف وتجهيز فاخر',
                 'طاقم خدمة وضيافة متخصص',
                 'إضاءة ومؤثرات صوتية',
@@ -183,6 +202,109 @@ const ListingDetailsModal = () => {
                   <CheckCircle size={15} className="text-primary" /> {feature}
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Customer Reviews & Feedback Section */}
+          <div className="details-reviews-section">
+            <div className="reviews-section-header">
+              <div className="reviews-title-wrap">
+                <h4>آراء وتقييمات العملاء</h4>
+                <div className="reviews-summary-badge">
+                  <Star size={15} fill="#cba153" color="#cba153" />
+                  <strong>{currentListing.rating || 5.0}</strong>
+                  <span className="text-muted">({reviewsList.length} تقييم)</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => setShowReviewForm(!showReviewForm)}
+              >
+                {showReviewForm ? 'إلغاء' : '+ أضف تجربتك وتقييمك'}
+              </button>
+            </div>
+
+            {/* Review Submission Form */}
+            {showReviewForm && (
+              <form onSubmit={handleReviewSubmit} className="add-review-box">
+                <h5>شاركنا رأيك في {currentListing.title}</h5>
+                <div className="rating-select-row">
+                  <span className="rating-label">درجة التقييم:</span>
+                  <div className="star-picker">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className="star-pick-btn"
+                        onClick={() => setNewReview({ ...newReview, rating: star })}
+                        title={`${star} نجوم`}
+                      >
+                        <Star
+                          size={22}
+                          fill={star <= newReview.rating ? '#cba153' : 'none'}
+                          color={star <= newReview.rating ? '#cba153' : 'var(--text-muted)'}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '10px' }}>
+                  <input
+                    type="text"
+                    required
+                    placeholder="اسمك الكريم..."
+                    value={newReview.author}
+                    onChange={(e) => setNewReview({ ...newReview, author: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '12px' }}>
+                  <textarea
+                    rows="2"
+                    required
+                    placeholder="اكتب انطباعك عن الخدمة وجودة التنظيم..."
+                    value={newReview.comment}
+                    onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                  ></textarea>
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-sm">
+                  نشر التقييم الآن ⭐
+                </button>
+              </form>
+            )}
+
+            {/* Reviews List */}
+            <div className="reviews-list">
+              {reviewsList.length === 0 ? (
+                <p className="no-reviews-note text-muted">
+                  كن أول من يقيّم هذه الخدمة ويشارك تجربته مع الآخرين!
+                </p>
+              ) : (
+                reviewsList.map((rev) => (
+                  <div key={rev.id} className="review-card-bubble">
+                    <div className="review-top-meta">
+                      <div className="reviewer-info">
+                        <strong>{rev.author}</strong>
+                        <div className="stars-mini">
+                          {[...Array(5)].map((_, idx) => (
+                            <Star
+                              key={idx}
+                              size={12}
+                              fill={idx < rev.rating ? '#cba153' : 'none'}
+                              color={idx < rev.rating ? '#cba153' : 'var(--text-muted)'}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="review-date text-muted">{rev.date}</span>
+                    </div>
+                    <p className="review-text">{rev.comment}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

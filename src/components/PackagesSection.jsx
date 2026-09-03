@@ -14,6 +14,7 @@ const PackagesSection = () => {
       price: `${pkg.packagePrice.toLocaleString()} ${settings.currency}`,
       numericPrice: pkg.packagePrice,
       originalPrice: pkg.originalPrice,
+      packageSavings: pkg.savings,
       location: 'نواكشوط (شامل كافة الخدمات)',
       image: pkg.image,
       isPackage: true,

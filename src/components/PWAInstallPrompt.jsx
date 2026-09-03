@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
+import { useApp } from '../context/useApp';
 
 const PWAInstallPrompt = () => {
+  const { settings } = useApp();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    if (settings?.enablePwaBanner === false) return;
+
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
       setIsInstalled(true);
@@ -34,7 +38,7 @@ const PWAInstallPrompt = () => {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
     };
-  }, []);
+  }, [settings?.enablePwaBanner]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
@@ -55,7 +59,7 @@ const PWAInstallPrompt = () => {
     localStorage.setItem('7avelty_pwa_dismissed', 'true');
   };
 
-  if (isInstalled || !showPrompt) return null;
+  if (settings?.enablePwaBanner === false || isInstalled || !showPrompt) return null;
 
   return (
     <div className="pwa-install-banner">

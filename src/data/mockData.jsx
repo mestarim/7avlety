@@ -1,15 +1,32 @@
 import React from 'react';
-import { Building2, Hotel, Speaker, Car, Utensils, Gift, Camera, Sparkles } from 'lucide-react';
+import { Building2, Hotel, Speaker, Car, Utensils, Gift, Camera, Sparkles, Music, Users, Heart } from 'lucide-react';
+
+export const getCategoryIcon = (iconName, size = 28) => {
+  switch (iconName) {
+    case 'Building2': return <Building2 size={size} />;
+    case 'Hotel': return <Hotel size={size} />;
+    case 'Speaker': return <Speaker size={size} />;
+    case 'Car': return <Car size={size} />;
+    case 'Utensils': return <Utensils size={size} />;
+    case 'Gift': return <Gift size={size} />;
+    case 'Camera': return <Camera size={size} />;
+    case 'Sparkles': return <Sparkles size={size} />;
+    case 'Music': return <Music size={size} />;
+    case 'Users': return <Users size={size} />;
+    case 'Heart': return <Heart size={size} />;
+    default: return <Sparkles size={size} />;
+  }
+};
 
 export const categoriesData = [
-  { id: 1, title: 'قاعات الأفراح', icon: <Building2 size={28} /> },
-  { id: 2, title: 'الفنادق والمؤتمرات', icon: <Hotel size={28} /> },
-  { id: 3, title: 'معدات صوت ودي جي', icon: <Speaker size={28} /> },
-  { id: 4, title: 'سيارات زفاف', icon: <Car size={28} /> },
-  { id: 5, title: 'أواني ومعدات ضيافة', icon: <Utensils size={28} /> },
-  { id: 6, title: 'الهدايا والسلال', icon: <Gift size={28} /> },
-  { id: 7, title: 'تصوير وتوثيق', icon: <Camera size={28} /> },
-  { id: 8, title: 'بكجات متكاملة', icon: <Sparkles size={28} /> },
+  { id: 1, title: 'قاعات الأفراح', iconName: 'Building2', icon: <Building2 size={28} /> },
+  { id: 2, title: 'الفنادق والمؤتمرات', iconName: 'Hotel', icon: <Hotel size={28} /> },
+  { id: 3, title: 'معدات صوت ودي جي', iconName: 'Speaker', icon: <Speaker size={28} /> },
+  { id: 4, title: 'سيارات زفاف', iconName: 'Car', icon: <Car size={28} /> },
+  { id: 5, title: 'أواني ومعدات ضيافة', iconName: 'Utensils', icon: <Utensils size={28} /> },
+  { id: 6, title: 'الهدايا والسلال', iconName: 'Gift', icon: <Gift size={28} /> },
+  { id: 7, title: 'تصوير وتوثيق', iconName: 'Camera', icon: <Camera size={28} /> },
+  { id: 8, title: 'بكجات متكاملة', iconName: 'Sparkles', icon: <Sparkles size={28} /> },
 ];
 
 export const listingsData = [
@@ -32,7 +49,11 @@ export const listingsData = [
       'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?q=80&w=800&auto=format&fit=crop'
     ],
     badge: 'قاعة فاخرة VIP',
-    description: 'قاعة مجهزة بأحدث الديكورات الكلاسيكية والعصرية، تتسع لـ 600 شخص مع جناح خاص للعروس ومواقف سيارات محروسة.'
+    description: 'قاعة مجهزة بأحدث الديكورات الكلاسيكية والعصرية، تتسع لـ 600 شخص مع جناح خاص للعروس ومواقف سيارات محروسة.',
+    reviews: [
+      { id: 'rev-1', author: 'أحمد سالم ولد ببكر', rating: 5, comment: 'قاعة أسطورية بمعنى الكلمة، التكييف ممتاز والضيافة والتنظيم شرفونا أمام الضيوف.', date: '2026-08-10' },
+      { id: 'rev-2', author: 'مريم بنت المصطفى', rating: 5, comment: 'جناح العروس مريح جداً والإضاءة كانت ساحرة في تصوير الفيديو.', date: '2026-08-01' }
+    ]
   },
   {
     id: 2,

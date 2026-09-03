@@ -4649,3 +4649,369 @@ ul {
     align-items: flex-start;
   }
 }
+
+/* ==========================================================
+   PRINT STYLES (@media print) FOR INVOICE & RECEIPTS
+   ========================================================== */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .header,
+  .hero,
+  #categories,
+  #packages,
+  #featured,
+  .footer,
+  .pwa-install-banner,
+  .whatsapp-float-btn,
+  .admin-sidebar,
+  .admin-topbar,
+  .admin-body,
+  .no-print,
+  .modal-close-btn,
+  .invoice-actions,
+  .toast-container {
+    display: none !important;
+  }
+
+  .modal-overlay {
+    position: static !important;
+    background: none !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .modal-content.invoice-modal-content {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .invoice-printable-area {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 1px solid #ddd !important;
+    padding: 24px !important;
+    border-radius: 8px !important;
+  }
+
+  .invoice-header h2,
+  .invoice-box h4,
+  .invoice-table th,
+  .invoice-number strong {
+    color: #000000 !important;
+  }
+
+  .invoice-table {
+    border-color: #ddd !important;
+  }
+
+  .invoice-table th,
+  .invoice-table td {
+    border-bottom: 1px solid #ddd !important;
+    color: #111111 !important;
+  }
+
+  .invoice-table thead tr {
+    background-color: #f5f5f5 !important;
+  }
+
+  .invoice-box {
+    background: #fafafa !important;
+    border: 1px solid #eee !important;
+    color: #222 !important;
+  }
+
+  .invoice-official-stamp {
+    border: 2px dashed #cba153 !important;
+    color: #cba153 !important;
+  }
+
+  .qr-code-box svg rect[fill="#1e1e1e"] {
+    fill: #f5f5f5 !important;
+  }
+}
+
+/* ==========================================================
+   MAINTENANCE MODE SCREEN STYLES
+   ========================================================== */
+.maintenance-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #1f1a10 0%, #0a0a0a 70%);
+  padding: 24px;
+  text-align: center;
+}
+
+.maintenance-card {
+  max-width: 600px;
+  background: rgba(24, 24, 24, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(203, 161, 83, 0.3);
+  border-radius: 24px;
+  padding: 48px 32px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(203, 161, 83, 0.15);
+}
+
+.maintenance-icon-glow {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(203, 161, 83, 0.15);
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 0 30px rgba(203, 161, 83, 0.3);
+}
+
+.maintenance-card h2 {
+  font-size: 26px;
+  margin-bottom: 14px;
+  color: var(--text-light);
+}
+
+.maintenance-card p {
+  line-height: 1.7;
+  font-size: 15px;
+  margin-bottom: 30px;
+}
+
+.maintenance-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================
+   CATEGORY CRUD & ICON SELECTOR STYLES
+   ========================================================== */
+.admin-cat-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.admin-cat-card-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn-cat {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-cat.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.action-btn-cat.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.cat-desc-preview {
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.icon-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.icon-choice-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 4px;
+}
+
+.icon-choice-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.icon-choice-btn.selected {
+  background: rgba(203, 161, 83, 0.18);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.choice-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.choice-name {
+  font-size: 11px;
+}
+
+/* ==========================================================
+   CUSTOMER REVIEWS & FEEDBACK STYLES
+   ========================================================== */
+.details-reviews-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.reviews-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reviews-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviews-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(203, 161, 83, 0.12);
+  border: 1px solid rgba(203, 161, 83, 0.25);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.add-review-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.add-review-box h5 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--text-light);
+}
+
+.rating-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.star-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.star-pick-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.star-pick-btn:hover {
+  transform: scale(1.2);
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-card-bubble {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+.review-top-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stars-mini {
+  display: flex;
+  gap: 2px;
+}
+
+.review-date {
+  font-size: 11px;
+}
+
+.review-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-light);
+}
+
+.no-reviews-note {
+  text-align: center;
+  padding: 16px;
+  font-size: 13px;
+}
