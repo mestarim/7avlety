@@ -1,0 +1,21 @@
+{
+  "name": "حفلتي | 7avelty - منصة حجز المناسبات والأفراح",
+  "short_name": "حفلتي",
+  "description": "المنصة الأولى في موريتانيا لحجز قاعات الأفراح، الفنادق، السيارات، والمعدات",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#cba153",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["events", "lifestyle", "shopping", "business"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
