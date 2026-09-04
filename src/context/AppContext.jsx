@@ -6,6 +6,21 @@ import {
   initialPromoCodes 
 } from '../data/mockData';
 import { AppContext } from './AppContextInstance';
+import {
+  fetchAllFromSupabase,
+  seedSupabaseIfEmpty,
+  syncListingToSupabase,
+  deleteListingFromSupabase,
+  syncBookingToSupabase,
+  deleteBookingFromSupabase,
+  syncCategoryToSupabase,
+  deleteCategoryFromSupabase,
+  syncPackageToSupabase,
+  deletePackageFromSupabase,
+  syncPromoCodeToSupabase,
+  deletePromoCodeFromSupabase,
+  syncSettingsToSupabase
+} from '../lib/supabaseSync';
 
 const initialBookings = [
   {
@@ -91,7 +106,9 @@ const initialSettings = {
   autoConfirmBookings: false,
   maintenanceMode: false,
   whatsappAlerts: true,
-  enablePwaBanner: true
+  enablePwaBanner: true,
+  adminPin: '7777',
+  supabaseConnected: true
 };
 
 // Safe helper for localStorage to catch QuotaExceededError
@@ -105,13 +122,25 @@ const safeSetItem = (key, value) => {
 
 export const AppProvider = ({ children }) => {
   const [currentView, setCurrentView] = useState('client'); // 'client' | 'admin'
-  const [adminTab, setAdminTab] = useState('overview'); // 'overview' | 'listings' | 'bookings' | 'categories' | 'promos' | 'settings'
+  const [adminTab, setAdminTab] = useState('overview'); // 'overview' | 'listings' | 'bookings' | 'packages' | 'categories' | 'promos' | 'settings'
+
+  // Admin PIN Authentication State
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    return sessionStorage.getItem('7avelty_admin_auth') === 'true';
+  });
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+
+  // Client Booking Tracker State
+  const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
+
+  // Cloud Connection Status
+  const [isCloudConnected, setIsCloudConnected] = useState(false);
 
   // Search and Filter States for Client View
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterCity, setFilterCity] = useState('all');
   const [filterKeyword, setFilterKeyword] = useState('');
-  const [filterCapacity, setFilterCapacity] = useState('all'); // 'all', 'small' (<200), 'medium' (200-500), 'large' (>500)
+  const [filterCapacity, setFilterCapacity] = useState('all');
   const [filterMaxPrice, setFilterMaxPrice] = useState(3000000);
 
   // Modals & Drawers States
@@ -168,7 +197,7 @@ export const AppProvider = ({ children }) => {
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { console.error(e); }
     }
-    return [1, 3]; // Default favorites for rich first impression
+    return [1, 3];
   });
 
   // Promo Codes State
@@ -180,7 +209,7 @@ export const AppProvider = ({ children }) => {
     return initialPromoCodes;
   });
 
-  // Categories State with LocalStorage persistence & CRUD
+  // Categories State
   const [categories, setCategories] = useState(() => {
     const saved = localStorage.getItem('7avelty_categories');
     if (saved) {
@@ -189,7 +218,14 @@ export const AppProvider = ({ children }) => {
     return defaultCategories;
   });
 
-  const [packages] = useState(packagesData);
+  // Packages State
+  const [packages, setPackages] = useState(() => {
+    const saved = localStorage.getItem('7avelty_packages');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return packagesData;
+  });
 
   // Settings State
   const [settings, setSettings] = useState(() => {
@@ -199,6 +235,59 @@ export const AppProvider = ({ children }) => {
     }
     return initialSettings;
   });
+
+  // Supabase Initial Hydration and Seeding Effect
+  useEffect(() => {
+    let isMounted = true;
+
+    const initCloud = async () => {
+      try {
+        const cloudData = await fetchAllFromSupabase();
+        if (!isMounted) return;
+
+        if (cloudData.isOnline) {
+          setIsCloudConnected(true);
+
+          if (cloudData.listings && cloudData.listings.length > 0) {
+            setListings(cloudData.listings);
+          }
+          if (cloudData.bookings && cloudData.bookings.length > 0) {
+            setBookings(cloudData.bookings);
+          }
+          if (cloudData.categories && cloudData.categories.length > 0) {
+            setCategories(cloudData.categories);
+          }
+          if (cloudData.packages && cloudData.packages.length > 0) {
+            setPackages(cloudData.packages);
+          }
+          if (cloudData.promoCodes && cloudData.promoCodes.length > 0) {
+            setPromoCodes(cloudData.promoCodes);
+          }
+          if (cloudData.settings) {
+            setSettings((prev) => ({ ...prev, ...cloudData.settings }));
+          }
+
+          // If database is brand new, seed with rich default data
+          await seedSupabaseIfEmpty({
+            listings: defaultListings,
+            categories: defaultCategories,
+            packages: packagesData,
+            promoCodes: initialPromoCodes,
+            bookings: initialBookings,
+            settings: initialSettings
+          });
+        }
+      } catch (err) {
+        console.warn('Cloud sync hydration exception:', err);
+      }
+    };
+
+    initCloud();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Save to LocalStorage with Safe Handling
   useEffect(() => {
@@ -222,8 +311,56 @@ export const AppProvider = ({ children }) => {
   }, [categories]);
 
   useEffect(() => {
+    safeSetItem('7avelty_packages', packages);
+  }, [packages]);
+
+  useEffect(() => {
     safeSetItem('7avelty_settings', settings);
   }, [settings]);
+
+  // Admin PIN Authentication Methods
+  const loginAdmin = (pin) => {
+    const validPin = settings.adminPin || '7777';
+    if (String(pin).trim() === String(validPin).trim()) {
+      setIsAdminAuthenticated(true);
+      sessionStorage.setItem('7avelty_admin_auth', 'true');
+      setIsAdminLoginModalOpen(false);
+      setCurrentView('admin');
+      showToast('مرحباً بك في لوحة تحكم الإدارة! 👑', 'success');
+      return { success: true };
+    } else {
+      return { success: false, message: 'الرمز السري غير صحيح! يرجى التأكد والمحاولة مجدداً.' };
+    }
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+    sessionStorage.removeItem('7avelty_admin_auth');
+    setCurrentView('client');
+    showToast('تم تسجيل الخروج بنجاح من لوحة الأدمن', 'info');
+  };
+
+  const requestAdminAccess = () => {
+    if (isAdminAuthenticated) {
+      setCurrentView('admin');
+    } else {
+      setIsAdminLoginModalOpen(true);
+    }
+  };
+
+  // Client Booking Lookup Method
+  const lookupBooking = (query) => {
+    if (!query || !query.trim()) return [];
+    const clean = query.trim().toLowerCase();
+    const cleanDigits = clean.replace(/[^0-9]/g, '');
+
+    return bookings.filter((b) => {
+      const idMatch = b.id && b.id.toLowerCase().includes(clean);
+      const phoneMatch = cleanDigits.length >= 4 && b.phone && b.phone.replace(/[^0-9]/g, '').includes(cleanDigits);
+      const nameMatch = b.customerName && b.customerName.toLowerCase().includes(clean);
+      return idMatch || phoneMatch || nameMatch;
+    });
+  };
 
   // Wishlist Actions
   const toggleWishlist = (listingId) => {
@@ -259,190 +396,278 @@ export const AppProvider = ({ children }) => {
   // Promo Code Validation & Application
   const applyPromoCode = (codeStr, orderAmount) => {
     if (!codeStr || !codeStr.trim()) {
-      return { valid: false, message: 'يرجى إدخال رمز الكوبون' };
+      return { valid: false, message: 'يرجى كتابة رمز الكوبون' };
     }
     const cleanCode = codeStr.trim().toUpperCase();
-    const found = promoCodes.find((c) => c.code.toUpperCase() === cleanCode && c.active);
+    const found = promoCodes.find((p) => p.code.toUpperCase() === cleanCode && p.active);
 
     if (!found) {
-      return { valid: false, message: 'رمز الكوبون غير صحيح أو منتهي الصلاحية' };
+      return { valid: false, message: 'كوبون الخصم غير صحيح أو منتهي الصلاحية' };
     }
 
-    if (found.minBookingAmount && orderAmount < found.minBookingAmount) {
-      return {
-        valid: false,
-        message: `الحد الأدنى لتطبيق هذا الكوبون هو ${found.minBookingAmount.toLocaleString()} أوقية`
-      };
-    }
-
-    let discountAmount = 0;
-    if (found.discountType === 'percentage') {
-      discountAmount = Math.round((orderAmount * found.discountValue) / 100);
-    } else {
-      discountAmount = found.discountValue;
-    }
-
-    // Ensure discount doesn't exceed total
-    discountAmount = Math.min(discountAmount, orderAmount);
+    const discountAmount = Math.round((orderAmount * found.discountPercent) / 100);
     const finalAmount = Math.max(0, orderAmount - discountAmount);
 
     return {
       valid: true,
       code: found.code,
+      discountPercent: found.discountPercent,
       discountAmount,
       finalAmount,
-      description: found.description
+      message: `تم تطبيق خصم ${found.discountPercent}% بنجاح!`
     };
   };
 
-  const addPromoCode = (newCode) => {
-    const item = {
-      ...newCode,
-      id: `pc-${Date.now()}`,
-      code: newCode.code.toUpperCase().trim(),
-      active: true,
-      usageCount: 0
+  const addPromoCode = (newPromo) => {
+    const promoWithId = {
+      ...newPromo,
+      id: Date.now(),
+      code: newPromo.code.toUpperCase(),
+      active: true
     };
-    setPromoCodes((prev) => [item, ...prev]);
-    showToast(`تمت إضافة الكوبون ${item.code} بنجاح!`);
-    return item;
+    setPromoCodes((prev) => [promoWithId, ...prev]);
+    syncPromoCodeToSupabase(promoWithId);
+    showToast(`تمت إضافة الكوبون ${promoWithId.code} بنجاح! 🏷️`, 'success');
   };
 
   const deletePromoCode = (id) => {
-    setPromoCodes((prev) => prev.filter((c) => c.id !== id));
-    showToast('تم حذف الكوبون', 'info');
+    setPromoCodes((prev) => prev.filter((p) => p.id !== id));
+    deletePromoCodeFromSupabase(id);
+    showToast('تم حذف الكوبون بنجاح', 'info');
   };
 
   const togglePromoCodeStatus = (id) => {
     setPromoCodes((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c))
+      prev.map((p) => {
+        if (p.id === id) {
+          const updated = { ...p, active: !p.active };
+          syncPromoCodeToSupabase(updated);
+          return updated;
+        }
+        return p;
+      })
     );
-    showToast('تم تغيير حالة الكوبون');
+    showToast('تم تحديث حالة الكوبون', 'info');
   };
 
-  // Actions: Listings
-  const addListing = (listing) => {
-    const newListing = {
-      ...listing,
-      id: Date.now(),
-      rating: 5.0,
-      createdAt: new Date().toISOString()
-    };
-    setListings((prev) => [newListing, ...prev]);
-    showToast('تمت إضافة ونشر الخدمة بنجاح في الموقع!');
-    return newListing;
-  };
-
-  const updateListing = (id, updatedData) => {
-    setListings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
-    );
-    showToast('تم تحديث بيانات الخدمة بنجاح!');
-  };
-
-  const deleteListing = (id) => {
-    setListings((prev) => prev.filter((item) => item.id !== id));
-    showToast('تم حذف الخدمة بنجاح', 'info');
-  };
-
-  // Actions: Bookings
-  const addBooking = (bookingData) => {
-    const newBooking = {
-      ...bookingData,
-      id: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: settings.autoConfirmBookings ? 'confirmed' : 'pending',
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setBookings((prev) => [newBooking, ...prev]);
-    
-    // Update promo code usage count if used
-    if (bookingData.promoCode) {
-      setPromoCodes((prev) =>
-        prev.map((c) =>
-          c.code.toUpperCase() === bookingData.promoCode.toUpperCase()
-            ? { ...c, usageCount: (c.usageCount || 0) + 1 }
-            : c
-        )
-      );
-    }
-
-    showToast('تم تسجيل وإرسال طلب الحجز بنجاح!');
-    return newBooking;
-  };
-
-  const updateBookingStatus = (id, newStatus) => {
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
-    );
-    const statusText = newStatus === 'confirmed' ? 'تأكيد' : newStatus === 'cancelled' ? 'إلغاء' : 'تحديث';
-    showToast(`تم ${statusText} حالة الحجز بنجاح`);
-  };
-
-  const deleteBooking = (id) => {
-    setBookings((prev) => prev.filter((b) => b.id !== id));
-    showToast('تم حذف سجل الحجز', 'info');
-  };
-
-  // Actions: Categories
+  // Category Actions
   const addCategory = (categoryData) => {
     const newCat = {
-      ...categoryData,
       id: Date.now(),
-      title: categoryData.title.trim(),
-      iconName: categoryData.iconName || 'Sparkles'
+      title: categoryData.title,
+      name: categoryData.title,
+      iconName: categoryData.iconName || 'Sparkles',
+      popular: categoryData.popular || false,
+      count: 0
     };
     setCategories((prev) => [...prev, newCat]);
-    showToast(`تمت إضافة قسم "${newCat.title}" بنجاح!`);
+    syncCategoryToSupabase(newCat);
+    showToast(`تمت إضافة تصنيف "${newCat.title}" بنجاح! 🏷️`, 'success');
     return newCat;
   };
 
   const updateCategory = (id, updatedData) => {
     setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updatedData } : c))
+      prev.map((c) => {
+        if (c.id === id) {
+          const updated = {
+            ...c,
+            ...updatedData,
+            name: updatedData.title || c.title || c.name,
+            title: updatedData.title || c.title
+          };
+          syncCategoryToSupabase(updated);
+          return updated;
+        }
+        return c;
+      })
     );
-    showToast('تم تحديث بيانات القسم بنجاح!');
+    showToast('تم تحديث بيانات التصنيف بنجاح! ✨', 'success');
   };
 
   const deleteCategory = (id) => {
     setCategories((prev) => prev.filter((c) => c.id !== id));
-    showToast('تم حذف القسم', 'info');
+    deleteCategoryFromSupabase(id);
+    showToast('تم حذف التصنيف بنجاح', 'info');
   };
 
-  // Actions: Reviews
+  // Packages Actions (CRUD)
+  const addPackage = (packageData) => {
+    const origPrice = Number(packageData.originalPrice) || 0;
+    const pkgPrice = Number(packageData.packagePrice) || 0;
+    const savings = Math.max(0, origPrice - pkgPrice);
+
+    const newPkg = {
+      id: packageData.id || `pkg-${Date.now().toString().slice(-6)}`,
+      title: packageData.title,
+      subtitle: packageData.subtitle || '',
+      originalPrice: origPrice,
+      packagePrice: pkgPrice,
+      savings: savings,
+      discountBadge: packageData.discountBadge || (savings > 0 ? `وفر ${savings.toLocaleString()} ${settings.currency}` : ''),
+      rating: Number(packageData.rating || 5.0),
+      popular: Boolean(packageData.popular),
+      image: packageData.image || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
+      itemsIncluded: Array.isArray(packageData.itemsIncluded) ? packageData.itemsIncluded : []
+    };
+
+    setPackages((prev) => [newPkg, ...prev]);
+    syncPackageToSupabase(newPkg);
+    showToast('تمت إضافة باقة العرس الجديدة بنجاح! 👑', 'success');
+    return newPkg;
+  };
+
+  const updatePackage = (id, updatedData) => {
+    setPackages((prev) =>
+      prev.map((pkg) => {
+        if (pkg.id === id) {
+          const orig = updatedData.originalPrice !== undefined ? Number(updatedData.originalPrice) : pkg.originalPrice;
+          const price = updatedData.packagePrice !== undefined ? Number(updatedData.packagePrice) : pkg.packagePrice;
+          const savings = Math.max(0, orig - price);
+
+          const merged = {
+            ...pkg,
+            ...updatedData,
+            originalPrice: orig,
+            packagePrice: price,
+            savings,
+            discountBadge: updatedData.discountBadge !== undefined 
+              ? updatedData.discountBadge 
+              : (savings > 0 ? `وفر ${savings.toLocaleString()} ${settings.currency}` : '')
+          };
+          syncPackageToSupabase(merged);
+          return merged;
+        }
+        return pkg;
+      })
+    );
+    showToast('تم تحديث الباقة بنجاح! ✨', 'success');
+  };
+
+  const deletePackage = (id) => {
+    setPackages((prev) => prev.filter((p) => p.id !== id));
+    deletePackageFromSupabase(id);
+    showToast('تم حذف باقة العرس بنجاح', 'info');
+  };
+
+  // Listings Actions
+  const addListing = (newListing) => {
+    const createdItem = {
+      ...newListing,
+      id: Date.now(),
+      rating: newListing.rating || 5.0,
+      badge: newListing.badge || 'جديد حصرياً',
+      images: newListing.images && newListing.images.length > 0 ? newListing.images : [newListing.image],
+      reviews: []
+    };
+    setListings((prev) => [createdItem, ...prev]);
+    syncListingToSupabase(createdItem);
+    showToast('تمت إضافة الخدمة / القاعة بنجاح! 🎉', 'success');
+  };
+
+  const updateListing = (id, updatedListing) => {
+    setListings((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const merged = {
+            ...item,
+            ...updatedListing,
+            images: updatedListing.images && updatedListing.images.length > 0 
+              ? updatedListing.images 
+              : (item.images || [item.image])
+          };
+          syncListingToSupabase(merged);
+          return merged;
+        }
+        return item;
+      })
+    );
+    showToast('تم تحديث بيانات الخدمة بنجاح! ✨', 'success');
+  };
+
+  const deleteListing = (id) => {
+    setListings((prev) => prev.filter((item) => item.id !== id));
+    deleteListingFromSupabase(id);
+    showToast('تم حذف الخدمة من القائمة', 'info');
+  };
+
+  // Add Review to Listing Action
   const addReviewToListing = (listingId, reviewData) => {
     setListings((prev) =>
       prev.map((item) => {
-        if (item.id !== listingId) return item;
-        const currentReviews = item.reviews || [];
-        const newReview = {
-          id: `rev-${Date.now()}`,
-          author: reviewData.author || 'زائر كريم',
-          rating: Number(reviewData.rating) || 5,
-          comment: reviewData.comment || '',
-          date: new Date().toISOString().split('T')[0]
-        };
-        const updatedReviews = [newReview, ...currentReviews];
-        const avgRating = (
-          updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length
-        ).toFixed(1);
+        if (item.id === listingId) {
+          const newReviewObj = {
+            id: Date.now(),
+            author: reviewData.author || 'عميل حفلتي',
+            rating: Number(reviewData.rating) || 5,
+            comment: reviewData.comment || '',
+            date: new Date().toLocaleDateString('ar-MR', { year: 'numeric', month: 'long', day: 'numeric' })
+          };
+          const updatedReviews = [newReviewObj, ...(item.reviews || [])];
+          
+          const totalScore = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+          const newAvgRating = parseFloat((totalScore / updatedReviews.length).toFixed(1));
 
-        return {
-          ...item,
-          rating: parseFloat(avgRating),
-          reviews: updatedReviews
-        };
+          const updatedListing = {
+            ...item,
+            rating: newAvgRating,
+            reviews: updatedReviews
+          };
+          syncListingToSupabase(updatedListing);
+          return updatedListing;
+        }
+        return item;
       })
     );
-    showToast('شكراً لك! تم نشر تقييمك بنجاح ⭐', 'success');
+    showToast('شكراً لك! تمت إضافة تقييمك بنجاح ⭐', 'success');
   };
 
-  // Update Settings
+  // Bookings Actions
+  const addBooking = (bookingData) => {
+    const newBooking = {
+      ...bookingData,
+      id: `BK-${Date.now().toString().slice(-4)}`,
+      status: settings.autoConfirmBookings ? 'confirmed' : 'pending',
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setBookings((prev) => [newBooking, ...prev]);
+    syncBookingToSupabase(newBooking);
+    showToast('تم استلام طلب حجزك بنجاح! سنتواصل معك للتأكيد 💍', 'success');
+    return newBooking;
+  };
+
+  const updateBookingStatus = (id, newStatus) => {
+    setBookings((prev) =>
+      prev.map((b) => {
+        if (b.id === id) {
+          const updated = { ...b, status: newStatus };
+          syncBookingToSupabase(updated);
+          return updated;
+        }
+        return b;
+      })
+    );
+    const statusArabic = newStatus === 'confirmed' ? 'مؤكد' : newStatus === 'cancelled' ? 'ملغى' : 'مكتمل';
+    showToast(`تم تغيير حالة الحجز إلى: ${statusArabic}`, 'info');
+  };
+
+  const deleteBooking = (id) => {
+    setBookings((prev) => prev.filter((b) => b.id !== id));
+    deleteBookingFromSupabase(id);
+    showToast('تم حذف الحجز بنجاح', 'info');
+  };
+
+  // Settings Actions
   const updateSettings = (newSettings) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
-    showToast('تم حفظ إعدادات المنصة بنجاح!');
+    setSettings((prev) => {
+      const merged = { ...prev, ...newSettings };
+      syncSettingsToSupabase(merged);
+      return merged;
+    });
+    showToast('تم حفظ الإعدادات وتحديثها سحابياً بنجاح! ⚙️', 'success');
   };
 
-  // Quick stats calculation
+  // Financial and KPI calculations
   const totalRevenue = bookings
     .filter((b) => b.status === 'confirmed' || b.status === 'completed')
     .reduce((sum, b) => sum + (Number(b.price) || 0), 0);
@@ -461,6 +686,16 @@ export const AppProvider = ({ children }) => {
         setCurrentView,
         adminTab,
         setAdminTab,
+        isAdminAuthenticated,
+        isAdminLoginModalOpen,
+        setIsAdminLoginModalOpen,
+        loginAdmin,
+        logoutAdmin,
+        requestAdminAccess,
+        isTrackerModalOpen,
+        setIsTrackerModalOpen,
+        lookupBooking,
+        isCloudConnected,
         listings,
         addListing,
         updateListing,
@@ -475,6 +710,9 @@ export const AppProvider = ({ children }) => {
         updateCategory,
         deleteCategory,
         packages,
+        addPackage,
+        updatePackage,
+        deletePackage,
         settings,
         updateSettings,
         bookingModalItem,
@@ -526,3 +764,5 @@ export const AppProvider = ({ children }) => {
     </AppContext.Provider>
   );
 };
+
+export default AppProvider;

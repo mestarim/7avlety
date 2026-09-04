@@ -13,6 +13,8 @@ import ListingDetailsModal from './components/ListingDetailsModal';
 import InvoiceModal from './components/InvoiceModal';
 import BudgetCalculatorModal from './components/BudgetCalculatorModal';
 import WishlistModal from './components/WishlistModal';
+import BookingTrackerModal from './components/BookingTrackerModal';
+import AdminLoginModal from './components/AdminLoginModal';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import Toast from './components/Toast';
 import WhatsAppFloatingBtn from './components/WhatsAppFloatingBtn';
@@ -20,7 +22,7 @@ import WhatsAppFloatingBtn from './components/WhatsAppFloatingBtn';
 import { MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
 
 function MainAppContent() {
-  const { currentView, setCurrentView, settings } = useApp();
+  const { currentView, settings, requestAdminAccess } = useApp();
 
   if (currentView === 'admin') {
     return (
@@ -59,13 +61,14 @@ function MainAppContent() {
             </a>
             <button
               className="btn btn-outline"
-              onClick={() => setCurrentView('admin')}
-              title="دخول المشرف"
+              onClick={requestAdminAccess}
+              title="دخول المشرف بالرمز السري"
             >
               <ShieldCheck size={16} /> لوحة تحكم الإدارة
             </button>
           </div>
         </div>
+        <AdminLoginModal />
         <Toast />
       </div>
     );
@@ -86,6 +89,8 @@ function MainAppContent() {
       <InvoiceModal />
       <BudgetCalculatorModal />
       <WishlistModal />
+      <BookingTrackerModal />
+      <AdminLoginModal />
       <PWAInstallPrompt />
       <WhatsAppFloatingBtn />
       <Toast />

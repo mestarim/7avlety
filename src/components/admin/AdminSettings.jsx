@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Save, 
   Check, 
-  CheckCircle2,
+  CheckCircle2, 
   Phone, 
   Mail, 
   MapPin, 
@@ -15,14 +15,35 @@ import {
   Download, 
   RotateCcw, 
   ShieldCheck, 
-  ExternalLink,
-  Sparkles,
-  Layers
+  Layers,
+  Lock,
+  KeyRound,
+  RefreshCw,
+  Server
 } from 'lucide-react';
 import { useApp } from '../../context/useApp';
+import { 
+  syncListingToSupabase, 
+  syncPackageToSupabase, 
+  syncCategoryToSupabase, 
+  syncPromoCodeToSupabase, 
+  syncBookingToSupabase, 
+  syncSettingsToSupabase 
+} from '../../lib/supabaseSync';
 
 const AdminSettings = () => {
-  const { settings, updateSettings, showToast, listings, bookings } = useApp();
+  const { 
+    settings, 
+    updateSettings, 
+    showToast, 
+    listings, 
+    bookings, 
+    packages, 
+    categories, 
+    promoCodes, 
+    isCloudConnected 
+  } = useApp();
+
   const [formData, setFormData] = useState({
     platformName: settings.platformName || 'حفلتي | 7avelty',
     platformSlogan: settings.platformSlogan || 'المنصة الموريتانية الأولى لحجز قاعات الأفراح وتجهيز المناسبات',
@@ -35,20 +56,46 @@ const AdminSettings = () => {
     autoConfirmBookings: settings.autoConfirmBookings || false,
     maintenanceMode: settings.maintenanceMode || false,
     whatsappAlerts: settings.whatsappAlerts !== undefined ? settings.whatsappAlerts : true,
-    enablePwaBanner: settings.enablePwaBanner !== undefined ? settings.enablePwaBanner : true
+    enablePwaBanner: settings.enablePwaBanner !== undefined ? settings.enablePwaBanner : true,
+    adminPin: settings.adminPin || '7777'
   });
 
-  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'contact' | 'automation' | 'backup'
+  const [activeTab, setActiveTab] = useState('general'); // 'general' | 'contact' | 'automation' | 'security' | 'backup'
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [syncingCloud, setSyncingCloud] = useState(false);
 
   const handleSubmit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     updateSettings(formData);
     setSavedSuccess(true);
     if (showToast) {
-      showToast('تم حفظ جميع الإعدادات وتحديثها في كامل المنصة بنجاح! 👑', 'success');
+      showToast('تم حفظ جميع الإعدادات وتحديثها سحابياً بنجاح! 👑', 'success');
     }
     setTimeout(() => setSavedSuccess(false), 4000);
+  };
+
+  const handleForceCloudSync = async () => {
+    setSyncingCloud(true);
+    try {
+      await Promise.all([
+        ...listings.map(syncListingToSupabase),
+        ...(packages || []).map(syncPackageToSupabase),
+        ...categories.map(syncCategoryToSupabase),
+        ...promoCodes.map(syncPromoCodeToSupabase),
+        ...bookings.map(syncBookingToSupabase),
+        syncSettingsToSupabase(formData)
+      ]);
+      if (showToast) {
+        showToast('تمت مزامنة ورفع كافة بيانات المنصة إلى خوادم Supabase بنجاح! ☁️👑', 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      if (showToast) {
+        showToast('حدث خطأ أثناء المزامنة، يرجى المحاولة لاحقاً', 'error');
+      }
+    } finally {
+      setSyncingCloud(false);
+    }
   };
 
   // Export full JSON backup
@@ -59,8 +106,12 @@ const AdminSettings = () => {
       settings: formData,
       listingsCount: listings.length,
       bookingsCount: bookings.length,
-      listings: listings,
-      bookings: bookings
+      packagesCount: packages ? packages.length : 0,
+      listings,
+      bookings,
+      packages,
+      categories,
+      promoCodes
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -78,32 +129,26 @@ const AdminSettings = () => {
 
   // Reset to default demo data
   const handleResetData = () => {
-    if (window.confirm('هل أنت متأكد من إعادة ضبط المنصة على البيانات الافتراضية؟ سيتم استرجاع الخدمات والقاعات الأولية.')) {
+    if (window.confirm('تحذير: هل أنت متأكد من استعادة البيانات الافتراضية؟ سيتم مسح التعديلات المحلية.')) {
       localStorage.removeItem('7avelty_listings');
       localStorage.removeItem('7avelty_bookings');
+      localStorage.removeItem('7avelty_categories');
+      localStorage.removeItem('7avelty_packages');
+      localStorage.removeItem('7avelty_promocodes');
       localStorage.removeItem('7avelty_settings');
-      if (showToast) {
-        showToast('تمت استعادة البيانات الافتراضية. جاري تحديث الصفحة...', 'info');
-      }
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      window.location.reload();
     }
   };
 
-  // Commission calculation example (based on 1,000,000 MRU booking)
-  const sampleAmount = 1000000;
-  const estimatedProfit = (sampleAmount * (Number(formData.commissionRate) || 0)) / 100;
-
   return (
-    <div className="admin-settings-container">
+    <div className="admin-page-container">
       
       {/* Top Header */}
       <div className="admin-page-header settings-page-header">
         <div>
           <h2>الإعدادات العامة وإدارة المنصة</h2>
           <p className="text-muted">
-            التحكم في العملة، نسب العمولة، بيانات التواصل في موريتانيا، وإدارة قاعدة البيانات
+            التحكم في العملة، نسب العمولة، بيانات التواصل، الأمان والرمز السري، وقاعدة بيانات Supabase
           </p>
         </div>
         <div className="settings-header-actions">
@@ -120,7 +165,7 @@ const AdminSettings = () => {
             <Check size={20} className="text-success" />
             <div>
               <strong>تم حفظ وتحديث الإعدادات بنجاح!</strong>
-              <p>تم تطبيق العملة وبيانات التواصل على واجهة الزوار ولوحة التحكم فورياً.</p>
+              <p>تم تطبيق العملة وبيانات التواصل ومزامنتها سحابياً مع Supabase فورياً.</p>
             </div>
           </div>
         </div>
@@ -154,10 +199,18 @@ const AdminSettings = () => {
 
         <button
           type="button"
+          className={`settings-nav-btn ${activeTab === 'security' ? 'active' : ''}`}
+          onClick={() => setActiveTab('security')}
+        >
+          <Lock size={16} /> الأمان وقاعدة البيانات
+        </button>
+
+        <button
+          type="button"
           className={`settings-nav-btn ${activeTab === 'backup' ? 'active' : ''}`}
           onClick={() => setActiveTab('backup')}
         >
-          <Database size={16} /> النسخ الاحتياطي والبيانات
+          <Database size={16} /> النسخ الاحتياطي
         </button>
       </div>
 
@@ -180,28 +233,38 @@ const AdminSettings = () => {
                 </div>
               </div>
 
-              <div className="settings-fields-grid">
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label">اسم المنصة الرسمي *</label>
+              <div className="settings-form-grid">
+                <div className="form-group">
+                  <label>اسم المنصة التجاري</label>
                   <input
                     type="text"
-                    required
-                    className="luxury-text-input"
                     value={formData.platformName}
                     onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
+                    placeholder="مثال: حفلتي | 7avelty"
+                    required
                   />
-                  <span className="input-helper-text">يظهر في أعلى الموقع والفواتير وعنوان التطبيق.</span>
                 </div>
 
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label">شعار أو وصف المنصة الترويجي</label>
+                <div className="form-group">
+                  <label>العملة الرسمية المعتمدة</label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  >
+                    <option value="أوقية">أوقية موريتانية (MRU)</option>
+                    <option value="MRU">رمز العملة الدولي (MRU)</option>
+                    <option value="أوقية جديدة">أوقية جديدة</option>
+                  </select>
+                </div>
+
+                <div className="form-group full-width">
+                  <label>الشعار والوصف الترويجي (Slogan)</label>
                   <input
                     type="text"
-                    className="luxury-text-input"
                     value={formData.platformSlogan}
                     onChange={(e) => setFormData({ ...formData, platformSlogan: e.target.value })}
+                    placeholder="المنصة الموريتانية الأولى لحجز قاعات الأفراح وتجهيز المناسبات"
                   />
-                  <span className="input-helper-text">يظهر في ترويسة الصفحة الرئيسية ومحركات البحث.</span>
                 </div>
               </div>
             </div>
@@ -212,57 +275,26 @@ const AdminSettings = () => {
                   <DollarSign size={20} className="text-primary" />
                 </div>
                 <div>
-                  <h3>العملة ونظام العمولات</h3>
-                  <p className="text-muted">تحديد العملة المستخدمة واحتساب أرباح المنصة من الحجوزات</p>
+                  <h3>السياسة المالية وعمولة المنصة</h3>
+                  <p className="text-muted">حساب الأرباح التقديرية وعمولة الوساطة عن كل حجز مؤكد</p>
                 </div>
               </div>
 
-              <div className="settings-fields-grid two-cols">
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><DollarSign size={16} className="text-primary" /> العملة الرسمية *</label>
-                  <input
-                    type="text"
-                    required
-                    className="luxury-text-input price-highlight"
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  />
-                  <span className="input-helper-text">مثال: أوقية أو MRU.</span>
-                </div>
-
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><Percent size={16} className="text-primary" /> نسبة عمولة المنصة (%) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    required
-                    className="luxury-text-input price-highlight"
-                    value={formData.commissionRate}
-                    onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
-                  />
-                  <span className="input-helper-text">النسبة المقتطعة من مزودي القاعات والخدمات.</span>
-                </div>
-              </div>
-
-              {/* Commission Live Estimator Box */}
-              <div className="commission-calculator-box">
-                <div className="calc-header">
-                  <Sparkles size={16} className="text-primary" />
-                  <strong>حاسبة الأرباح التقديرية (نموذج عملي):</strong>
-                </div>
-                <p>
-                  عند حجز قاعة بقيمة <strong className="text-primary">{sampleAmount.toLocaleString()} {formData.currency}</strong> بنسبة عمولة <strong>%{formData.commissionRate}</strong>:
-                </p>
-                <div className="calc-results-row">
-                  <div className="calc-pill">
-                    <span>ربح المنصة الصافي:</span>
-                    <strong className="text-primary">{estimatedProfit.toLocaleString()} {formData.currency}</strong>
+              <div className="settings-form-grid">
+                <div className="form-group">
+                  <label>نسبة عمولة المنصة (%)</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={formData.commissionRate}
+                      onChange={(e) => setFormData({ ...formData, commissionRate: parseFloat(e.target.value) || 0 })}
+                    />
+                    <Percent size={18} className="input-inner-icon" />
                   </div>
-                  <div className="calc-pill">
-                    <span>مستحقات مزود الخدمة:</span>
-                    <strong>{(sampleAmount - estimatedProfit).toLocaleString()} {formData.currency}</strong>
-                  </div>
+                  <span className="field-hint">النسبة المقتطعة من إجمالي قيمة حجز القاعات والخدمات (الافتراضي 10%)</span>
                 </div>
               </div>
             </div>
@@ -270,7 +302,7 @@ const AdminSettings = () => {
         )}
 
         {/* =========================================================
-            TAB 2: Contact & Headquarters in Mauritania
+            TAB 2: Contact & Mauritania Office
         ========================================================= */}
         {activeTab === 'contact' && (
           <div className="settings-tab-pane">
@@ -280,72 +312,63 @@ const AdminSettings = () => {
                   <Phone size={20} className="text-primary" />
                 </div>
                 <div>
-                  <h3>بيانات التواصل وخدمة العملاء في موريتانيا</h3>
-                  <p className="text-muted">الأرقام والعناوين التي يراها العملاء للتواصل المباشر والاستفسارات</p>
+                  <h3>بيانات التواصل ومكتب موريتانيا</h3>
+                  <p className="text-muted">هذه البيانات تظهر في تذييل الموقع، الفواتير، وزر المحادثة المباشر</p>
                 </div>
               </div>
 
-              <div className="settings-fields-grid two-cols">
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><Phone size={16} className="text-primary" /> رقم الهاتف المباشر</label>
-                  <input
-                    type="text"
-                    className="luxury-text-input"
-                    placeholder="+222 46 00 00 00"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                  <span className="input-helper-text">للاتصال الهاتفي السريع من داخل موريتانيا.</span>
+              <div className="settings-form-grid">
+                <div className="form-group">
+                  <label>رقم هاتف الاتصال الرئيسي</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+222 46 00 00 00"
+                    />
+                    <Phone size={18} className="input-inner-icon" />
+                  </div>
                 </div>
 
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><MessageSquare size={16} className="text-primary" /> رقم الواتساب الرسمي (+222)</label>
-                  <input
-                    type="text"
-                    className="luxury-text-input"
-                    placeholder="+22246000000"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  />
-                  <span className="input-helper-text">
-                    مرتبط بزر الواتساب العائم في أسفل الموقع. 
-                    {formData.whatsapp && (
-                      <a
-                        href={`https://wa.me/${formData.whatsapp.replace(/[^0-9]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="test-whatsapp-link"
-                      >
-                        تجربة فتح الواتساب <ExternalLink size={12} />
-                      </a>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className="settings-fields-grid two-cols">
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><Mail size={16} className="text-primary" /> البريد الإلكتروني الرسمي</label>
-                  <input
-                    type="email"
-                    className="luxury-text-input"
-                    placeholder="contact@7avelty.mr"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                  <span className="input-helper-text">لاستقبال الإشعارات وطلبات الانضمام.</span>
+                <div className="form-group">
+                  <label>رقم واتساب المعتمد (للحجوزات التلقائية)</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                      placeholder="+22246000000"
+                    />
+                    <MessageSquare size={18} className="input-inner-icon" />
+                  </div>
+                  <span className="field-hint">بدون مسافات أو إشارات (+222XXXXXXXX)</span>
                 </div>
 
-                <div className="luxury-input-group">
-                  <label className="luxury-field-label"><MapPin size={16} className="text-primary" /> المقر الرئيسي والعنوان</label>
-                  <input
-                    type="text"
-                    className="luxury-text-input"
-                    placeholder="نواكشوط، تفرغ زينة، موريتانيا"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  />
-                  <span className="input-helper-text">يظهر في تذييل الموقع (Footer) والفواتير.</span>
+                <div className="form-group">
+                  <label>البريد الإلكتروني الرسمي</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="contact@7avelty.mr"
+                    />
+                    <Mail size={18} className="input-inner-icon" />
+                  </div>
+                </div>
+
+                <div className="form-group full-width">
+                  <label>عنوان المقر في موريتانيا</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      placeholder="نواكشوط، تفرغ زينة، موريتانيا"
+                    />
+                    <MapPin size={18} className="input-inner-icon" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -353,7 +376,7 @@ const AdminSettings = () => {
         )}
 
         {/* =========================================================
-            TAB 3: Automation & Booking Rules
+            TAB 3: Automation & Switches
         ========================================================= */}
         {activeTab === 'automation' && (
           <div className="settings-tab-pane">
@@ -363,8 +386,8 @@ const AdminSettings = () => {
                   <Sliders size={20} className="text-primary" />
                 </div>
                 <div>
-                  <h3>خيارات الحجز والأتمتة الذكية</h3>
-                  <p className="text-muted">التحكم في طريقة معالجة طلبات الحجز والإشعارات الفورية</p>
+                  <h3>الأتمتة وتجربة المستخدم</h3>
+                  <p className="text-muted">التحكم في خيارات قبول الحجوزات وإشعارات المنصة وتطبيق PWA</p>
                 </div>
               </div>
 
@@ -372,9 +395,9 @@ const AdminSettings = () => {
                 {/* Toggle 1: Auto Confirm */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>التأكيد التلقائي لطلبات الحجز</strong>
+                    <strong>تأكيد الحجوزات آلياً</strong>
                     <p className="text-muted">
-                      قبول أي طلب حجز يقدمه العميل مباشرة بحالة "مؤكد" دون انتظار مراجعة الأدمن اليدوية.
+                      اعتبار أي حجز جديد "مؤكداً" فور إرسال العميل للطلب دون الحاجة لمراجعة يدوية من الأدمن.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -387,12 +410,12 @@ const AdminSettings = () => {
                   </label>
                 </div>
 
-                {/* Toggle 2: WhatsApp Alerts */}
+                {/* Toggle 2: WhatsApp alerts */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>إشعارات الواتساب المباشرة</strong>
+                    <strong>إشعارات وتنبيهات واتساب للعميل</strong>
                     <p className="text-muted">
-                      توجيه العميل مباشرة إلى محادثة واتساب الإدارة مع ملخص الحجز بعد إرسال الطلب.
+                      تجهيز رسالة واتساب منسقة تلقائياً للعميل عند إتمام الحجز لإرسالها بضغطة زر.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -408,9 +431,9 @@ const AdminSettings = () => {
                 {/* Toggle 3: PWA Banner */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>شريط تثبيت تطبيق الهاتف (PWA App Banner)</strong>
+                    <strong>شريط تثبيت تطبيق حفلتي (PWA Install Prompt)</strong>
                     <p className="text-muted">
-                      إظهار إشعار تثبيت التطبيق تلقائياً للمستخدمين على هواتف الأندرويد والآيفون.
+                      إظهار نافذة منبثقة أنيقة في أسفل الشاشة للزوار لتثبيت المنصة كتطبيق على هواتفهم.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -448,7 +471,97 @@ const AdminSettings = () => {
         )}
 
         {/* =========================================================
-            TAB 4: Data Management & Backup
+            TAB 4: Security & Supabase Cloud
+        ========================================================= */}
+        {activeTab === 'security' && (
+          <div className="settings-tab-pane">
+            <div className="settings-card-panel">
+              <div className="card-panel-header">
+                <div className="panel-icon-circle">
+                  <Lock size={20} className="text-primary" />
+                </div>
+                <div>
+                  <h3>أمان وحماية لوحة الإدارة (PIN Security)</h3>
+                  <p className="text-muted">تحديد الرمز السري المطلوب لفتح لوحة التحكم ومنع المتطفلين</p>
+                </div>
+              </div>
+
+              <div className="settings-form-grid">
+                <div className="form-group">
+                  <label>الرمز السري للوحة الإدارة (Admin PIN)</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      maxLength="8"
+                      value={formData.adminPin}
+                      onChange={(e) => setFormData({ ...formData, adminPin: e.target.value })}
+                      placeholder="7777"
+                      required
+                    />
+                    <KeyRound size={18} className="input-inner-icon" />
+                  </div>
+                  <span className="field-hint">
+                    يُطلب هذا الرمز تلقائياً عند الضغط على "لوحة الأدمن" من واجهة الموقع العامة (الرمز الافتراضي: 7777).
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-card-panel">
+              <div className="card-panel-header">
+                <div className="panel-icon-circle">
+                  <Server size={20} className="text-primary" />
+                </div>
+                <div>
+                  <h3>قاعدة بيانات Supabase السحابية</h3>
+                  <p className="text-muted">معلومات الربط السحابي المباشر والمزامنة اللحظية بين الأجهزة</p>
+                </div>
+              </div>
+
+              <div className="supabase-meta-card">
+                <div className="supabase-meta-row">
+                  <span className="meta-label">معرف المشروع السحابي:</span>
+                  <span className="meta-val font-mono">swadzlaylihpngcbdacl (7avelty)</span>
+                </div>
+                <div className="supabase-meta-row">
+                  <span className="meta-label">المنطقة الجغرافية:</span>
+                  <span className="meta-val">أوروبا الغربية (eu-west-1)</span>
+                </div>
+                <div className="supabase-meta-row">
+                  <span className="meta-label">حالة الاتصال اللحظي:</span>
+                  <span className="meta-val text-success font-bold">
+                    {isCloudConnected ? '🟢 متصل ونشط (Active Healthy)' : '🟡 جارٍ الاتصال بالسحابة'}
+                  </span>
+                </div>
+                <div className="supabase-meta-row">
+                  <span className="meta-label">الجداول المتزامنة:</span>
+                  <span className="meta-val">listings, bookings, packages, categories, promo_codes, settings</span>
+                </div>
+              </div>
+
+              <div className="cloud-sync-action-box">
+                <div>
+                  <h4>مزامنة يدوية فورية مع Supabase</h4>
+                  <p className="text-muted">
+                    رفع جميع القاعات والباقات والكوبونات والحجوزات الحالية وتحديثها على السحابة بنقرة واحدة.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  disabled={syncingCloud}
+                  onClick={handleForceCloudSync}
+                >
+                  <RefreshCw size={16} className={syncingCloud ? 'spin-animation' : ''} />
+                  <span>{syncingCloud ? 'جارٍ المزامنة السحابية...' : 'مزامنة السحابة الآن'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================
+            TAB 5: Backup & Reset
         ========================================================= */}
         {activeTab === 'backup' && (
           <div className="settings-tab-pane">
@@ -520,7 +633,7 @@ const AdminSettings = () => {
         <div className="settings-bottom-actions-bar">
           <div className="settings-bottom-status">
             <ShieldCheck size={16} className="text-primary" />
-            <span>يتم حفظ جميع التغييرات في التخزين المحلي ومزامنتها لحظياً في كامل المنصة.</span>
+            <span>يتم حفظ جميع التغييرات في التخزين المحلي ومزامنتها لحظياً في خوادم Supabase.</span>
           </div>
           <button type="submit" className="btn btn-primary btn-lg">
             <Save size={18} /> حفظ ونشر جميع الإعدادات

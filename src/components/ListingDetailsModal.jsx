@@ -11,7 +11,8 @@ import {
   Heart, 
   Users, 
   AlertCircle,
-  Calendar
+  Calendar,
+  Share2
 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 
@@ -26,7 +27,8 @@ const ListingDetailsModal = () => {
     isDateBooked,
     getBookedDates,
     listings,
-    addReviewToListing
+    addReviewToListing,
+    showToast
   } = useApp();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -80,12 +82,41 @@ const ListingDetailsModal = () => {
     window.open(`https://wa.me/${settings.whatsapp?.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
   };
 
+  const handleShare = async () => {
+    const shareText = `شاهد خدمة "${detailsModalItem.title}" (${detailsModalItem.location}) بسعر ${detailsModalItem.price} على منصة حفلتي للمناسبات:`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: detailsModalItem.title,
+          text: shareText,
+          url: window.location.href
+        });
+        return;
+      } catch {
+        // Fallback
+      }
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
+      if (showToast) showToast('تم نسخ رابط الخدمة بنجاح للمشاركة! 📋', 'success');
+    }
+  };
+
   const wish = isWishlisted(detailsModalItem.id);
 
   return (
     <div className="modal-overlay" onClick={() => setDetailsModalItem(null)}>
       <div className="modal-content modal-details-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-top-actions">
+          <button 
+            type="button"
+            className="btn-fav-round share-modal-btn"
+            onClick={handleShare}
+            title="مشاركة هذه الخدمة"
+            aria-label="مشاركة"
+          >
+            <Share2 size={18} />
+          </button>
           <button 
             className={`btn-fav-round ${wish ? 'active' : ''}`}
             onClick={() => toggleWishlist(detailsModalItem.id)}

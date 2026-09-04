@@ -11,7 +11,10 @@ import {
   ShieldCheck, 
   Globe,
   Tag,
-  Bell
+  Bell,
+  Sparkles,
+  LogOut,
+  Database
 } from 'lucide-react';
 import { useApp } from '../../context/useApp';
 import AdminOverview from './AdminOverview';
@@ -20,9 +23,18 @@ import AdminBookings from './AdminBookings';
 import AdminCategories from './AdminCategories';
 import AdminPromoCodes from './AdminPromoCodes';
 import AdminSettings from './AdminSettings';
+import AdminPackages from './AdminPackages';
 
 const AdminLayout = () => {
-  const { adminTab, setAdminTab, setCurrentView, bookings, promoCodes } = useApp();
+  const { 
+    adminTab, 
+    setAdminTab, 
+    setCurrentView, 
+    bookings, 
+    promoCodes, 
+    logoutAdmin,
+    isCloudConnected 
+  } = useApp();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const pendingCount = bookings.filter((b) => b.status === 'pending').length;
@@ -30,6 +42,7 @@ const AdminLayout = () => {
   const navItems = [
     { id: 'overview', label: 'لوحة التحكم والإحصائيات', icon: <LayoutDashboard size={20} /> },
     { id: 'listings', label: 'إدارة الخدمات والقاعات', icon: <Building size={20} /> },
+    { id: 'packages', label: 'إدارة باقات الأعراس', icon: <Sparkles size={20} /> },
     { 
       id: 'bookings', 
       label: 'إدارة الحجوزات والطلبات', 
@@ -60,7 +73,7 @@ const AdminLayout = () => {
             <ShieldCheck size={26} className="text-primary" />
             <div>
               <div className="brand-name">7avelty <span className="text-primary">Admin</span></div>
-              <span className="brand-subtitle">لوحة الإدارة الرئيسية</span>
+              <span className="brand-subtitle">لوحة الإدارة السحابية</span>
             </div>
           </div>
           <button className="admin-mobile-close" onClick={() => setIsMobileNavOpen(false)}>
@@ -86,8 +99,11 @@ const AdminLayout = () => {
         </nav>
 
         <div className="admin-sidebar-footer">
-          <button className="btn btn-outline admin-switch-view-btn" onClick={() => setCurrentView('client')}>
+          <button className="btn btn-outline admin-switch-view-btn mb-2" onClick={() => setCurrentView('client')}>
             <Globe size={18} /> عرض واجهة الزوار
+          </button>
+          <button className="btn btn-outline admin-logout-btn" onClick={logoutAdmin} title="تسجيل الخروج وقفل اللوحة">
+            <LogOut size={16} /> تسجيل الخروج
           </button>
         </div>
       </aside>
@@ -106,6 +122,12 @@ const AdminLayout = () => {
           </div>
 
           <div className="admin-topbar-actions">
+            {/* Cloud Status Pill */}
+            <div className={`admin-cloud-pill ${isCloudConnected ? 'connected' : 'local'}`} title="حالة الربط السحابي بقاعدة البيانات">
+              <Database size={15} />
+              <span>{isCloudConnected ? 'Supabase متصل 🟢' : 'تخزين محلي 💾'}</span>
+            </div>
+
             {pendingCount > 0 && (
               <div className="admin-notification-pill" title={`${pendingCount} طلبات حجز بانتظار التأكيد`}>
                 <Bell size={16} className="text-warning" />
@@ -135,6 +157,7 @@ const AdminLayout = () => {
         <main className="admin-body">
           {adminTab === 'overview' && <AdminOverview />}
           {adminTab === 'listings' && <AdminListings />}
+          {adminTab === 'packages' && <AdminPackages />}
           {adminTab === 'bookings' && <AdminBookings />}
           {adminTab === 'promos' && <AdminPromoCodes />}
           {adminTab === 'categories' && <AdminCategories />}

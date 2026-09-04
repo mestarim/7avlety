@@ -6,7 +6,8 @@ import {
   Calculator, 
   Sun, 
   Moon, 
-  Sparkles 
+  Sparkles,
+  CalendarCheck2
 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 
@@ -19,7 +20,9 @@ const Header = () => {
     setIsWishlistOpen,
     setIsBudgetCalculatorOpen,
     theme,
-    toggleTheme
+    toggleTheme,
+    requestAdminAccess,
+    setIsTrackerModalOpen
   } = useApp();
 
   const handleQuickBook = () => {
@@ -69,6 +72,16 @@ const Header = () => {
             )}
           </button>
 
+          {/* Client Booking Tracker Button */}
+          <button
+            className="btn btn-outline tracker-header-btn"
+            onClick={() => setIsTrackerModalOpen(true)}
+            title="تتبع حالة حجزك برقم الحجز أو الهاتف"
+          >
+            <CalendarCheck2 size={15} className="text-primary" />
+            <span>تتبع حجزي</span>
+          </button>
+
           {/* Budget Calculator Trigger */}
           <button
             className="btn btn-outline budget-calc-header-btn"
@@ -79,11 +92,11 @@ const Header = () => {
             <span>حاسبة الميزانية</span>
           </button>
 
-          {/* Admin Dashboard Switcher Button */}
+          {/* Admin Dashboard Switcher with PIN Security */}
           <button
             className="btn btn-outline admin-header-btn"
-            onClick={() => setCurrentView('admin')}
-            title="الدخول إلى لوحة تحكم الأدمن"
+            onClick={requestAdminAccess}
+            title="الدخول الآمن إلى لوحة تحكم الأدمن"
           >
             <ShieldCheck size={15} className="text-primary" />
             <span>لوحة الأدمن</span>

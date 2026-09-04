@@ -3,19 +3,20 @@ import {
   Star, 
   MapPin, 
   CalendarDays, 
-  Eye, 
   FilterX, 
   Heart, 
   MessageCircle, 
   Users, 
-  SlidersHorizontal,
-  Sparkles
+  SlidersHorizontal, 
+  Sparkles, 
+  ArrowUpDown
 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 
 const FeaturedListings = () => {
   const { 
     listings, 
+    categories,
     setBookingModalItem, 
     setDetailsModalItem,
     filterCategory, 
@@ -32,16 +33,15 @@ const FeaturedListings = () => {
   const [capacityFilter, setCapacityFilter] = useState('all'); // 'all' | 'small' | 'medium' | 'large'
   const [maxPriceFilter, setMaxPriceFilter] = useState(3000000);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('featured'); // 'featured' | 'rating' | 'price-asc' | 'price-desc' | 'capacity'
 
+  // Dynamic category tabs derived from user-managed categories
   const categoryTabs = [
     { id: 'all', label: 'جميع الخدمات' },
-    { id: 'قاعات الأفراح', label: 'قاعات أفراح' },
-    { id: 'الفنادق والمؤتمرات', label: 'فنادق' },
-    { id: 'معدات صوت ودي جي', label: 'معدات صوت' },
-    { id: 'سيارات زفاف', label: 'سيارات زفاف' },
-    { id: 'أواني ومعدات ضيافة', label: 'أواني وضيافة' },
-    { id: 'الهدايا والسلال', label: 'هدايا وسلال' },
-    { id: 'تصوير وتوثيق', label: 'تصوير سينمائي' }
+    ...categories.map((c) => ({
+      id: c.title || c.name,
+      label: c.title || c.name
+    }))
   ];
 
   const cityTabs = ['all', 'نواكشوط', 'نواذيبو', 'روصو', 'كيفه'];
@@ -100,12 +100,34 @@ const FeaturedListings = () => {
     return matchesCategory && matchesCity && matchesKeyword && matchesCapacity && matchesPrice;
   });
 
+  // Sorting Logic
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    if (sortBy === 'rating') {
+      return (b.rating || 0) - (a.rating || 0);
+    }
+    if (sortBy === 'price-asc') {
+      const pA = a.numericPrice || (typeof a.price === 'number' ? a.price : 0);
+      const pB = b.numericPrice || (typeof b.price === 'number' ? b.price : 0);
+      return pA - pB;
+    }
+    if (sortBy === 'price-desc') {
+      const pA = a.numericPrice || (typeof a.price === 'number' ? a.price : 0);
+      const pB = b.numericPrice || (typeof b.price === 'number' ? b.price : 0);
+      return pB - pA;
+    }
+    if (sortBy === 'capacity') {
+      return (b.capacity || 0) - (a.capacity || 0);
+    }
+    return 0; // 'featured' keeps default order
+  });
+
   const handleResetFilters = () => {
     setFilterCategory('all');
     setFilterCity('all');
     setFilterKeyword('');
     setCapacityFilter('all');
     setMaxPriceFilter(3000000);
+    setSortBy('featured');
   };
 
   const handleQuickWhatsApp = (e, item) => {
@@ -158,12 +180,29 @@ const FeaturedListings = () => {
               </div>
             </div>
 
+            {/* Sorting Dropdown */}
+            <div className="sort-filter-group">
+              <span className="filter-label"><ArrowUpDown size={14} className="text-primary" /> ترتيب:</span>
+              <select
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="ترتيب وفرز العروض"
+              >
+                <option value="featured">المميز والافتراضي 👑</option>
+                <option value="rating">الأعلى تقييماً ⭐</option>
+                <option value="price-asc">السعر: من الأقل للأعلى 💰</option>
+                <option value="price-desc">السعر: من الأعلى للأقل 💎</option>
+                <option value="capacity">السعة: الأكبر فالأصغر 👥</option>
+              </select>
+            </div>
+
             {/* Advanced Filters Toggle */}
             <button 
               className={`btn btn-outline btn-sm adv-filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`}
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              <SlidersHorizontal size={14} /> فلاتر متقدمة (السعة والأسعار)
+              <SlidersHorizontal size={14} /> فلاتر متقدمة
             </button>
           </div>
 
@@ -215,7 +254,7 @@ const FeaturedListings = () => {
         </div>
 
         {/* Listings Grid */}
-        {filteredListings.length === 0 ? (
+        {sortedListings.length === 0 ? (
           <div className="empty-listings-state">
             <FilterX size={48} className="text-muted empty-filter-icon" />
             <h3>لا توجد خدمات مطابقة لبحثك</h3>
@@ -226,7 +265,7 @@ const FeaturedListings = () => {
           </div>
         ) : (
           <div className="listings-grid">
-            {filteredListings.map((item) => {
+            {sortedListings.map((item) => {
               const wish = isWishlisted(item.id);
               return (
                 <div 
@@ -258,49 +297,58 @@ const FeaturedListings = () => {
                     )}
                   </div>
 
-                  <div className="listing-info">
-                    <div className="listing-header-info">
-                      <h3 className="listing-title">{item.title}</h3>
-                      <div className="listing-rating text-primary">
-                        <Star size={15} fill="currentColor" /> {item.rating || 5.0}
+                  <div className="listing-content">
+                    <div className="listing-category-badge">{item.category}</div>
+                    <h3 className="listing-title">{item.title}</h3>
+                    
+                    <div className="listing-meta-row">
+                      <div className="listing-location">
+                        <MapPin size={14} className="text-primary" />
+                        <span>{item.location}</span>
+                      </div>
+                      <div className="listing-rating">
+                        <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                        <span>{item.rating}</span>
+                        {item.reviews && item.reviews.length > 0 && (
+                          <span className="listing-reviews-count">({item.reviews.length})</span>
+                        )}
                       </div>
                     </div>
 
-                    <div className="listing-location text-muted">
-                      <MapPin size={14} /> {item.location}
+                    <div className="listing-features-tags">
+                      {(item.features || item.amenities || []).slice(0, 3).map((feat, idx) => (
+                        <span key={idx} className="feat-chip">{feat}</span>
+                      ))}
                     </div>
 
-                    <div className="listing-price-box">
-                      <span className="price-tag text-primary">{item.price}</span>
-                    </div>
+                    <div className="listing-footer">
+                      <div className="listing-price-box">
+                        <span className="price-label">يبدأ من</span>
+                        <span className="price-value">{item.price}</span>
+                      </div>
 
-                    <div className="listing-card-actions">
-                      <button
-                        className="btn btn-primary btn-sm flex-grow"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBookingModalItem(item);
-                        }}
-                      >
-                        <CalendarDays size={15} /> حجز فوري
-                      </button>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDetailsModalItem(item);
-                        }}
-                        title="عرض كافة التفاصيل ومعرض الصور"
-                      >
-                        <Eye size={15} /> تفاصيل
-                      </button>
-                      <button
-                        className="btn-card-whatsapp"
-                        onClick={(e) => handleQuickWhatsApp(e, item)}
-                        title="استفسار سريع عبر واتساب"
-                      >
-                        <MessageCircle size={17} />
-                      </button>
+                      <div className="listing-actions">
+                        {/* Quick WhatsApp Inquiry */}
+                        <button
+                          type="button"
+                          className="btn-icon-round whatsapp-card-btn"
+                          onClick={(e) => handleQuickWhatsApp(e, item)}
+                          title="استفسار سريع عبر واتساب"
+                          aria-label="واتساب"
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBookingModalItem(item);
+                          }}
+                        >
+                          <CalendarDays size={14} /> حجز الآن
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

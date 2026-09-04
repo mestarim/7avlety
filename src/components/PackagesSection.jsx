@@ -1,9 +1,9 @@
 import React from 'react';
-import { Sparkles, CheckCircle2, CalendarDays, MessageCircle } from 'lucide-react';
+import { Sparkles, CheckCircle2, CalendarDays, MessageCircle, Share2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 
 const PackagesSection = () => {
-  const { packages, setBookingModalItem, settings } = useApp();
+  const { packages, setBookingModalItem, settings, showToast } = useApp();
 
   const handleBookPackage = (pkg) => {
     // Transform package to booking modal item format
@@ -11,23 +11,43 @@ const PackagesSection = () => {
       id: pkg.id,
       title: pkg.title,
       badge: 'بكج متكامل',
-      price: `${pkg.packagePrice.toLocaleString()} ${settings.currency}`,
-      numericPrice: pkg.packagePrice,
-      originalPrice: pkg.originalPrice,
-      packageSavings: pkg.savings,
+      price: `${Number(pkg.packagePrice).toLocaleString()} ${settings.currency}`,
+      numericPrice: Number(pkg.packagePrice),
+      originalPrice: Number(pkg.originalPrice),
+      packageSavings: Number(pkg.savings),
       location: 'نواكشوط (شامل كافة الخدمات)',
       image: pkg.image,
       isPackage: true,
       description: pkg.subtitle,
-      notesDefault: `طلب حجز: ${pkg.title}\nالخدمات المشمولة:\n- ${pkg.itemsIncluded.join('\n- ')}`
+      notesDefault: `طلب حجز: ${pkg.title}\nالخدمات المشمولة:\n- ${(pkg.itemsIncluded || []).join('\n- ')}`
     });
   };
 
   const handleWhatsAppPackage = (pkg) => {
     const text = encodeURIComponent(
-      `مرحباً منصة حفلتي، أود الاستفسار عن ${pkg.title} بسعر ${pkg.packagePrice.toLocaleString()} ${settings.currency}`
+      `مرحباً منصة حفلتي، أود الاستفسار عن ${pkg.title} بسعر ${Number(pkg.packagePrice).toLocaleString()} ${settings.currency}`
     );
     window.open(`https://wa.me/${settings.whatsapp?.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+  };
+
+  const handleSharePackage = async (pkg) => {
+    const shareText = `شاهد "${pkg.title}" لليلة العمر بسعر خاص ${Number(pkg.packagePrice).toLocaleString()} ${settings.currency} على منصة حفلتي:`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: pkg.title,
+          text: shareText,
+          url: `${window.location.origin}#packages`
+        });
+        return;
+      } catch {
+        // Fallback
+      }
+    }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${shareText} ${window.location.origin}#packages`);
+      if (showToast) showToast('تم نسخ رابط باقة العرس للمشاركة! 📋', 'success');
+    }
   };
 
   return (
@@ -50,7 +70,18 @@ const PackagesSection = () => {
 
               <div className="package-img-wrap">
                 <img src={pkg.image} alt={pkg.title} loading="lazy" />
-                <span className="package-discount-tag">{pkg.discountBadge}</span>
+                {pkg.discountBadge && (
+                  <span className="package-discount-tag">{pkg.discountBadge}</span>
+                )}
+                <button
+                  type="button"
+                  className="package-share-btn"
+                  onClick={() => handleSharePackage(pkg)}
+                  title="مشاركة هذه الباقة"
+                  aria-label="مشاركة الباقة"
+                >
+                  <Share2 size={16} />
+                </button>
               </div>
 
               <div className="package-content">
@@ -61,7 +92,7 @@ const PackagesSection = () => {
 
                 <h4 className="package-includes-title">ماذا تشمل هذه الباقة؟</h4>
                 <ul className="package-features-list">
-                  {pkg.itemsIncluded.map((item, index) => (
+                  {(pkg.itemsIncluded || []).map((item, index) => (
                     <li key={index}>
                       <CheckCircle2 size={16} className="text-primary check-icon" />
                       <span>{item}</span>
@@ -71,16 +102,20 @@ const PackagesSection = () => {
 
                 <div className="package-pricing-box">
                   <div className="package-prices">
-                    <span className="package-original-price">
-                      {pkg.originalPrice.toLocaleString()} {settings.currency}
-                    </span>
+                    {pkg.originalPrice && pkg.originalPrice > pkg.packagePrice && (
+                      <span className="package-original-price">
+                        {Number(pkg.originalPrice).toLocaleString()} {settings.currency}
+                      </span>
+                    )}
                     <span className="package-final-price">
-                      {pkg.packagePrice.toLocaleString()} <span className="currency-unit">{settings.currency}</span>
+                      {Number(pkg.packagePrice).toLocaleString()} <span className="currency-unit">{settings.currency}</span>
                     </span>
                   </div>
-                  <div className="package-savings-note">
-                    توفير مؤكد: {pkg.savings.toLocaleString()} {settings.currency}
-                  </div>
+                  {pkg.savings > 0 && (
+                    <div className="package-savings-note">
+                      توفير مؤكد: {Number(pkg.savings).toLocaleString()} {settings.currency}
+                    </div>
+                  )}
                 </div>
 
                 <div className="package-card-actions">
