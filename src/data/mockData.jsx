@@ -258,8 +258,10 @@ export const initialPromoCodes = [
     code: 'AROSS2026',
     discountType: 'percentage', // percentage or fixed
     discountValue: 15,
+    discountPercent: 15,
     description: 'خصم خاص للعرسان الجدد 15%',
     active: true,
+    expiry: '2026-12-31',
     minBookingAmount: 500000,
     usageCount: 14
   },
@@ -268,8 +270,10 @@ export const initialPromoCodes = [
     code: '7AVELTY50',
     discountType: 'fixed',
     discountValue: 50000,
+    discountPercent: 0,
     description: 'خصم فوري 50,000 أوقية على أي حجز',
     active: true,
+    expiry: '2026-12-31',
     minBookingAmount: 200000,
     usageCount: 38
   },
@@ -278,8 +282,10 @@ export const initialPromoCodes = [
     code: 'RAMADAN',
     discountType: 'percentage',
     discountValue: 10,
+    discountPercent: 10,
     description: 'عرض المناسبات الرمضانية 10%',
     active: true,
+    expiry: '2026-11-30',
     minBookingAmount: 100000,
     usageCount: 8
   }

@@ -82,6 +82,10 @@ const BookingModal = () => {
 
   const handleApplyPromo = () => {
     setPromoError('');
+    if (!promoCodeInput.trim()) {
+      setPromoError(language === 'ar' ? 'يرجى كتابة رمز الكوبون' : (language === 'fr' ? 'Veuillez saisir un code promo' : 'Please enter a promo code'));
+      return;
+    }
     const result = applyPromoCode(promoCodeInput, basePrice);
     if (result.valid) {
       setAppliedPromo(result);
@@ -89,6 +93,12 @@ const BookingModal = () => {
       setPromoError(result.message);
       setAppliedPromo(null);
     }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput('');
+    setPromoError('');
   };
 
   const handleSubmit = (e) => {
@@ -346,7 +356,20 @@ const BookingModal = () => {
 
                 {appliedPromo && (
                   <div className="promo-success-alert">
-                    <CheckCircle2 size={15} /> {language === 'ar' ? 'تم تطبيق الكوبون' : (language === 'fr' ? 'Coupon appliqué' : 'Coupon applied')} <strong>{appliedPromo.code}</strong>! {language === 'ar' ? 'خصم' : (language === 'fr' ? 'Remise' : 'Discount')} {appliedPromo.discountAmount.toLocaleString()} {settings.currency}
+                    <div className="promo-success-text">
+                      <CheckCircle2 size={15} /> 
+                      <span>
+                        {language === 'ar' ? 'تم تطبيق الكوبون' : (language === 'fr' ? 'Coupon appliqué' : 'Coupon applied')} <strong>{appliedPromo.code}</strong>! {language === 'ar' ? 'خصم' : (language === 'fr' ? 'Remise' : 'Discount')} {appliedPromo.discountAmount.toLocaleString()} {settings.currency}
+                      </span>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="promo-remove-btn" 
+                      onClick={handleRemovePromo}
+                      title={language === 'ar' ? 'إلغاء الكوبون' : (language === 'fr' ? 'Supprimer le coupon' : 'Remove coupon')}
+                    >
+                      <X size={14} />
+                    </button>
                   </div>
                 )}
                 {promoError && (

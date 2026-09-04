@@ -19,7 +19,11 @@ import {
   Lock,
   KeyRound,
   RefreshCw,
-  Server
+  Server,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { useApp } from '../../context/useApp';
 import { 
@@ -63,6 +67,7 @@ const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('general'); // 'general' | 'contact' | 'automation' | 'security' | 'backup'
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [syncingCloud, setSyncingCloud] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   const handleSubmit = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -123,13 +128,13 @@ const AdminSettings = () => {
     downloadAnchor.remove();
 
     if (showToast) {
-      showToast('تم تصدير النسخة الاحتياطية بنجاح!', 'info');
+      showToast('تم تصدير النسخة الاحتياطية بنجاح! 💾', 'info');
     }
   };
 
   // Reset to default demo data
   const handleResetData = () => {
-    if (window.confirm('تحذير: هل أنت متأكد من استعادة البيانات الافتراضية؟ سيتم مسح التعديلات المحلية.')) {
+    if (window.confirm('تحذير هام: هل أنت متأكد من استعادة البيانات الافتراضية؟ سيتم مسح التعديلات المحلية وإعادة ضبط المنصة.')) {
       localStorage.removeItem('7avelty_listings');
       localStorage.removeItem('7avelty_bookings');
       localStorage.removeItem('7avelty_categories');
@@ -140,8 +145,13 @@ const AdminSettings = () => {
     }
   };
 
+  // Live Commission Calculator preview
+  const sampleBookingAmount = 1000000;
+  const estimatedPlatformCommission = Math.round((sampleBookingAmount * (formData.commissionRate || 0)) / 100);
+  const estimatedVendorPayout = sampleBookingAmount - estimatedPlatformCommission;
+
   return (
-    <div className="admin-page-container">
+    <div className="admin-page-container admin-settings-container">
       
       {/* Top Header */}
       <div className="admin-page-header settings-page-header">
@@ -152,8 +162,13 @@ const AdminSettings = () => {
           </p>
         </div>
         <div className="settings-header-actions">
-          <button type="button" className="btn btn-primary" onClick={handleSubmit}>
-            <Save size={18} /> حفظ الإعدادات
+          <button 
+            type="button" 
+            className={`btn btn-primary ${savedSuccess ? 'btn-saved-success' : ''}`}
+            onClick={handleSubmit}
+          >
+            {savedSuccess ? <Check size={18} /> : <Save size={18} />}
+            <span>{savedSuccess ? 'تم الحفظ بنجاح!' : 'حفظ الإعدادات'}</span>
           </button>
         </div>
       </div>
@@ -162,7 +177,7 @@ const AdminSettings = () => {
       {savedSuccess && (
         <div className="settings-alert-banner">
           <div className="alert-content">
-            <Check size={20} className="text-success" />
+            <CheckCircle2 size={22} className="text-success" />
             <div>
               <strong>تم حفظ وتحديث الإعدادات بنجاح!</strong>
               <p>تم تطبيق العملة وبيانات التواصل ومزامنتها سحابياً مع Supabase فورياً.</p>
@@ -178,7 +193,8 @@ const AdminSettings = () => {
           className={`settings-nav-btn ${activeTab === 'general' ? 'active' : ''}`}
           onClick={() => setActiveTab('general')}
         >
-          <Building2 size={16} /> الهوية والمالية
+          <Building2 size={17} />
+          <span>الهوية والمالية</span>
         </button>
 
         <button
@@ -186,7 +202,8 @@ const AdminSettings = () => {
           className={`settings-nav-btn ${activeTab === 'contact' ? 'active' : ''}`}
           onClick={() => setActiveTab('contact')}
         >
-          <Phone size={16} /> التواصل والمقر (موريتانيا)
+          <Phone size={17} />
+          <span>التواصل ومكتب موريتانيا</span>
         </button>
 
         <button
@@ -194,7 +211,8 @@ const AdminSettings = () => {
           className={`settings-nav-btn ${activeTab === 'automation' ? 'active' : ''}`}
           onClick={() => setActiveTab('automation')}
         >
-          <Sliders size={16} /> الحجوزات والأتمتة
+          <Sliders size={17} />
+          <span>الحجوزات والأتمتة</span>
         </button>
 
         <button
@@ -202,7 +220,8 @@ const AdminSettings = () => {
           className={`settings-nav-btn ${activeTab === 'security' ? 'active' : ''}`}
           onClick={() => setActiveTab('security')}
         >
-          <Lock size={16} /> الأمان وقاعدة البيانات
+          <Lock size={17} />
+          <span>الأمان وقاعدة البيانات</span>
         </button>
 
         <button
@@ -210,7 +229,8 @@ const AdminSettings = () => {
           className={`settings-nav-btn ${activeTab === 'backup' ? 'active' : ''}`}
           onClick={() => setActiveTab('backup')}
         >
-          <Database size={16} /> النسخ الاحتياطي
+          <Database size={17} />
+          <span>النسخ الاحتياطي</span>
         </button>
       </div>
 
@@ -225,7 +245,7 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Building2 size={20} className="text-primary" />
+                  <Building2 size={22} className="text-primary" />
                 </div>
                 <div>
                   <h3>هوية المنصة والعلامة التجارية</h3>
@@ -235,36 +255,48 @@ const AdminSettings = () => {
 
               <div className="settings-form-grid">
                 <div className="form-group">
-                  <label>اسم المنصة التجاري</label>
-                  <input
-                    type="text"
-                    value={formData.platformName}
-                    onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
-                    placeholder="مثال: حفلتي | 7avelty"
-                    required
-                  />
+                  <label>اسم المنصة التجاري: *</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      value={formData.platformName}
+                      onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
+                      placeholder="مثال: حفلتي | 7avelty"
+                      required
+                    />
+                    <Building2 size={18} className="input-inner-icon" />
+                  </div>
+                  <span className="field-hint">يظهر في أعلى كل صفحة وفي تذييل الموقع</span>
                 </div>
 
                 <div className="form-group">
-                  <label>العملة الرسمية المعتمدة</label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  >
-                    <option value="أوقية">أوقية موريتانية (MRU)</option>
-                    <option value="MRU">رمز العملة الدولي (MRU)</option>
-                    <option value="أوقية جديدة">أوقية جديدة</option>
-                  </select>
+                  <label>العملة الرسمية المعتمدة في المنصة: *</label>
+                  <div className="input-with-icon">
+                    <select
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                    >
+                      <option value="أوقية">أوقية موريتانية (MRU)</option>
+                      <option value="MRU">رمز العملة الدولي (MRU)</option>
+                      <option value="أوقية جديدة">أوقية جديدة</option>
+                    </select>
+                    <DollarSign size={18} className="input-inner-icon" />
+                  </div>
+                  <span className="field-hint">تُعرض بجانب جميع أسعار الخدمات والباقات والكوبونات</span>
                 </div>
 
                 <div className="form-group full-width">
-                  <label>الشعار والوصف الترويجي (Slogan)</label>
-                  <input
-                    type="text"
-                    value={formData.platformSlogan}
-                    onChange={(e) => setFormData({ ...formData, platformSlogan: e.target.value })}
-                    placeholder="المنصة الموريتانية الأولى لحجز قاعات الأفراح وتجهيز المناسبات"
-                  />
+                  <label>الشعار والوصف الترويجي (Slogan):</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      value={formData.platformSlogan}
+                      onChange={(e) => setFormData({ ...formData, platformSlogan: e.target.value })}
+                      placeholder="المنصة الموريتانية الأولى لحجز قاعات الأفراح وتجهيز المناسبات"
+                    />
+                    <Sparkles size={18} className="input-inner-icon" />
+                  </div>
+                  <span className="field-hint">الجملة الترويجية التي تعبر عن هوية المنصة في محركات البحث ومشاركات التواصل</span>
                 </div>
               </div>
             </div>
@@ -272,17 +304,17 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <DollarSign size={20} className="text-primary" />
+                  <DollarSign size={22} className="text-primary" />
                 </div>
                 <div>
-                  <h3>السياسة المالية وعمولة المنصة</h3>
+                  <h3>السياسة المالية وعمولة الوساطة</h3>
                   <p className="text-muted">حساب الأرباح التقديرية وعمولة الوساطة عن كل حجز مؤكد</p>
                 </div>
               </div>
 
               <div className="settings-form-grid">
                 <div className="form-group">
-                  <label>نسبة عمولة المنصة (%)</label>
+                  <label>نسبة عمولة المنصة (%): *</label>
                   <div className="input-with-icon">
                     <input
                       type="number"
@@ -291,10 +323,31 @@ const AdminSettings = () => {
                       step="0.5"
                       value={formData.commissionRate}
                       onChange={(e) => setFormData({ ...formData, commissionRate: parseFloat(e.target.value) || 0 })}
+                      required
                     />
                     <Percent size={18} className="input-inner-icon" />
                   </div>
-                  <span className="field-hint">النسبة المقتطعة من إجمالي قيمة حجز القاعات والخدمات (الافتراضي 10%)</span>
+                  <span className="field-hint">النسبة المقتطعة من إجمالي قيمة حجز القاعات والخدمات (الافتراضي: 10%)</span>
+                </div>
+
+                <div className="form-group">
+                  {/* Live Simulation preview */}
+                  <div className="commission-calculator-box">
+                    <div className="calc-header">
+                      <Sparkles size={16} />
+                      <strong>معاينة حية لاحتساب عمولة حجز بقيمة {sampleBookingAmount.toLocaleString()} {formData.currency}:</strong>
+                    </div>
+                    <div className="calc-results-row">
+                      <div className="calc-pill">
+                        <span>عمولة حفلتي ({formData.commissionRate}%):</span>
+                        <strong className="text-primary font-bold">{estimatedPlatformCommission.toLocaleString()} {formData.currency}</strong>
+                      </div>
+                      <div className="calc-pill">
+                        <span>مستحقات مزود الخدمة:</span>
+                        <strong className="text-success font-bold">{estimatedVendorPayout.toLocaleString()} {formData.currency}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -309,44 +362,59 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Phone size={20} className="text-primary" />
+                  <Phone size={22} className="text-primary" />
                 </div>
                 <div>
-                  <h3>بيانات التواصل ومكتب موريتانيا</h3>
-                  <p className="text-muted">هذه البيانات تظهر في تذييل الموقع، الفواتير، وزر المحادثة المباشر</p>
+                  <h3>بيانات التواصل ومقر المنصة في موريتانيا</h3>
+                  <p className="text-muted">هذه البيانات تظهر في تذييل الموقع، الفواتير المطبوعة، وزر المحادثة المباشر</p>
                 </div>
               </div>
 
               <div className="settings-form-grid">
                 <div className="form-group">
-                  <label>رقم هاتف الاتصال الرئيسي</label>
+                  <label>رقم هاتف الاتصال المباشر:</label>
                   <div className="input-with-icon">
                     <input
                       type="text"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+222 46 00 00 00"
+                      required
                     />
                     <Phone size={18} className="input-inner-icon" />
                   </div>
+                  <span className="field-hint">يظهر للزبائن عند رغبتهم بالاتصال التليفوني المباشر</span>
                 </div>
 
                 <div className="form-group">
-                  <label>رقم واتساب المعتمد (للحجوزات التلقائية)</label>
+                  <label>رقم واتساب المعتمد (للحجوزات والدعم الفني):</label>
                   <div className="input-with-icon">
                     <input
                       type="text"
                       value={formData.whatsapp}
                       onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                       placeholder="+22246000000"
+                      required
                     />
                     <MessageSquare size={18} className="input-inner-icon" />
                   </div>
-                  <span className="field-hint">بدون مسافات أو إشارات (+222XXXXXXXX)</span>
+                  <div className="field-hint-with-action">
+                    <span className="field-hint">صيغة رقم الواتساب الدولي (+222XXXXXXXX)</span>
+                    {formData.whatsapp && (
+                      <a 
+                        href={`https://wa.me/${formData.whatsapp.replace(/[^0-9]/g, '')}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="test-whatsapp-link"
+                      >
+                        <ExternalLink size={13} /> تجربة فتح المحادثة
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label>البريد الإلكتروني الرسمي</label>
+                  <label>البريد الإلكتروني الرسمي:</label>
                   <div className="input-with-icon">
                     <input
                       type="email"
@@ -356,10 +424,11 @@ const AdminSettings = () => {
                     />
                     <Mail size={18} className="input-inner-icon" />
                   </div>
+                  <span className="field-hint">يُدرج في إشعارات الاستفسارات والفواتير</span>
                 </div>
 
-                <div className="form-group full-width">
-                  <label>عنوان المقر في موريتانيا</label>
+                <div className="form-group">
+                  <label>عنوان المقر في موريتانيا:</label>
                   <div className="input-with-icon">
                     <input
                       type="text"
@@ -369,6 +438,7 @@ const AdminSettings = () => {
                     />
                     <MapPin size={18} className="input-inner-icon" />
                   </div>
+                  <span className="field-hint">العنوان الفعلي لمكتب خدمة العملاء وتوقيع العقود</span>
                 </div>
               </div>
             </div>
@@ -383,7 +453,7 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Sliders size={20} className="text-primary" />
+                  <Sliders size={22} className="text-primary" />
                 </div>
                 <div>
                   <h3>الأتمتة وتجربة المستخدم</h3>
@@ -395,7 +465,12 @@ const AdminSettings = () => {
                 {/* Toggle 1: Auto Confirm */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>تأكيد الحجوزات آلياً</strong>
+                    <div className="toggle-title-row">
+                      <strong>تأكيد الحجوزات آلياً</strong>
+                      <span className={`toggle-status-badge ${formData.autoConfirmBookings ? 'active' : 'inactive'}`}>
+                        {formData.autoConfirmBookings ? 'مفعّل آلياً' : 'يتطلب مراجعة يدوية'}
+                      </span>
+                    </div>
                     <p className="text-muted">
                       اعتبار أي حجز جديد "مؤكداً" فور إرسال العميل للطلب دون الحاجة لمراجعة يدوية من الأدمن.
                     </p>
@@ -413,9 +488,14 @@ const AdminSettings = () => {
                 {/* Toggle 2: WhatsApp alerts */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>إشعارات وتنبيهات واتساب للعميل</strong>
+                    <div className="toggle-title-row">
+                      <strong>إشعارات وتنبيهات واتساب للعميل</strong>
+                      <span className={`toggle-status-badge ${formData.whatsappAlerts ? 'active' : 'inactive'}`}>
+                        {formData.whatsappAlerts ? 'مفعّل' : 'معطّل'}
+                      </span>
+                    </div>
                     <p className="text-muted">
-                      تجهيز رسالة واتساب منسقة تلقائياً للعميل عند إتمام الحجز لإرسالها بضغطة زر.
+                      تجهيز رسالة واتساب منسقة تلقائياً للعميل عند إتمام الحجز لإرسالها بضغطة زر وتأكيد تفاصيل الموعد.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -431,9 +511,14 @@ const AdminSettings = () => {
                 {/* Toggle 3: PWA Banner */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong>شريط تثبيت تطبيق حفلتي (PWA Install Prompt)</strong>
+                    <div className="toggle-title-row">
+                      <strong>شريط تثبيت تطبيق حفلتي (PWA Install Prompt)</strong>
+                      <span className={`toggle-status-badge ${formData.enablePwaBanner ? 'active' : 'inactive'}`}>
+                        {formData.enablePwaBanner ? 'مفعّل' : 'معطّل'}
+                      </span>
+                    </div>
                     <p className="text-muted">
-                      إظهار نافذة منبثقة أنيقة في أسفل الشاشة للزوار لتثبيت المنصة كتطبيق على هواتفهم.
+                      إظهار نافذة منبثقة أنيقة في أسفل الشاشة للزوار لتثبيت المنصة كتطبيق على هواتفهم الذكية.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -449,11 +534,16 @@ const AdminSettings = () => {
                 {/* Toggle 4: Maintenance Mode */}
                 <div className="setting-toggle-card">
                   <div className="toggle-card-info">
-                    <strong style={{ color: formData.maintenanceMode ? 'var(--danger)' : 'inherit' }}>
-                      وضع الصيانة المؤقت
-                    </strong>
+                    <div className="toggle-title-row">
+                      <strong style={{ color: formData.maintenanceMode ? 'var(--danger)' : 'inherit' }}>
+                        وضع الصيانة المؤقت للمنصة
+                      </strong>
+                      <span className={`toggle-status-badge ${formData.maintenanceMode ? 'danger' : 'inactive'}`}>
+                        {formData.maintenanceMode ? 'الموقع في وضع الصيانة' : 'الموقع يعمل بشكل طبيعي'}
+                      </span>
+                    </div>
                     <p className="text-muted">
-                      إيقاف استقبال طلبات الحجز الجديدة مؤقتاً لأعمال التحديث والتطوير.
+                      إيقاف استقبال طلبات الحجز الجديدة مؤقتاً لأعمال التحديث والتطوير وإظهار رسالة لطيفة للزوار.
                     </p>
                   </div>
                   <label className="luxury-switch-label">
@@ -478,30 +568,39 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Lock size={20} className="text-primary" />
+                  <Lock size={22} className="text-primary" />
                 </div>
                 <div>
-                  <h3>أمان وحماية لوحة الإدارة (PIN Security)</h3>
-                  <p className="text-muted">تحديد الرمز السري المطلوب لفتح لوحة التحكم ومنع المتطفلين</p>
+                  <h3>أمان وحماية لوحة الإدارة (Admin PIN Security)</h3>
+                  <p className="text-muted">تحديد الرمز السري المطلوب لفتح لوحة التحكم ومنع الوصول غير المصرح به</p>
                 </div>
               </div>
 
               <div className="settings-form-grid">
                 <div className="form-group">
-                  <label>الرمز السري للوحة الإدارة (Admin PIN)</label>
+                  <label>الرمز السري للوحة الإدارة (Admin PIN): *</label>
                   <div className="input-with-icon">
                     <input
-                      type="text"
+                      type={showPin ? "text" : "password"}
                       maxLength="8"
                       value={formData.adminPin}
                       onChange={(e) => setFormData({ ...formData, adminPin: e.target.value })}
                       placeholder="7777"
                       required
+                      style={{ letterSpacing: '4px', fontSize: '18px', fontWeight: 'bold' }}
                     />
                     <KeyRound size={18} className="input-inner-icon" />
+                    <button
+                      type="button"
+                      className="input-eye-btn"
+                      onClick={() => setShowPin(!showPin)}
+                      title={showPin ? "إخفاء الرمز" : "إظهار الرمز"}
+                    >
+                      {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                   <span className="field-hint">
-                    يُطلب هذا الرمز تلقائياً عند الضغط على "لوحة الأدمن" من واجهة الموقع العامة (الرمز الافتراضي: 7777).
+                    يُطلب هذا الرمز تلقائياً عند الضغط على "لوحة الأدمن" من الموقع العام (الرمز الافتراضي: 7777).
                   </span>
                 </div>
               </div>
@@ -510,11 +609,11 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Server size={20} className="text-primary" />
+                  <Server size={22} className="text-primary" />
                 </div>
                 <div>
                   <h3>قاعدة بيانات Supabase السحابية</h3>
-                  <p className="text-muted">معلومات الربط السحابي المباشر والمزامنة اللحظية بين الأجهزة</p>
+                  <p className="text-muted">معلومات الربط السحابي المباشر والمزامنة اللحظية بين جميع الأجهزة</p>
                 </div>
               </div>
 
@@ -524,35 +623,35 @@ const AdminSettings = () => {
                   <span className="meta-val font-mono">swadzlaylihpngcbdacl (7avelty)</span>
                 </div>
                 <div className="supabase-meta-row">
-                  <span className="meta-label">المنطقة الجغرافية:</span>
+                  <span className="meta-label">المنطقة الجغرافية للخادم:</span>
                   <span className="meta-val">أوروبا الغربية (eu-west-1)</span>
                 </div>
                 <div className="supabase-meta-row">
-                  <span className="meta-label">حالة الاتصال اللحظي:</span>
+                  <span className="meta-label">حالة الاتصال السحابي:</span>
                   <span className="meta-val text-success font-bold">
-                    {isCloudConnected ? '🟢 متصل ونشط (Active Healthy)' : '🟡 جارٍ الاتصال بالسحابة'}
+                    {isCloudConnected ? '🟢 متصل ونشط لحظياً (Active Healthy)' : '🟡 جارٍ الاتصال بالسحابة'}
                   </span>
                 </div>
                 <div className="supabase-meta-row">
-                  <span className="meta-label">الجداول المتزامنة:</span>
+                  <span className="meta-label">الجداول السحابية النشطة:</span>
                   <span className="meta-val">listings, bookings, packages, categories, promo_codes, settings</span>
                 </div>
               </div>
 
               <div className="cloud-sync-action-box">
-                <div>
-                  <h4>مزامنة يدوية فورية مع Supabase</h4>
+                <div className="cloud-sync-info">
+                  <h4>مزامنة يدوية فورية وشاملة مع Supabase</h4>
                   <p className="text-muted">
-                    رفع جميع القاعات والباقات والكوبونات والحجوزات الحالية وتحديثها على السحابة بنقرة واحدة.
+                    رفع وحفظ جميع القاعات والباقات والكوبونات والحجوزات الحالية وتحديثها على السحابة بنقرة واحدة.
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="btn btn-outline"
+                  className="btn btn-outline cloud-sync-btn"
                   disabled={syncingCloud}
                   onClick={handleForceCloudSync}
                 >
-                  <RefreshCw size={16} className={syncingCloud ? 'spin-animation' : ''} />
+                  <RefreshCw size={17} className={syncingCloud ? 'spin-animation' : ''} />
                   <span>{syncingCloud ? 'جارٍ المزامنة السحابية...' : 'مزامنة السحابة الآن'}</span>
                 </button>
               </div>
@@ -568,7 +667,7 @@ const AdminSettings = () => {
             <div className="settings-card-panel">
               <div className="card-panel-header">
                 <div className="panel-icon-circle">
-                  <Database size={20} className="text-primary" />
+                  <Database size={22} className="text-primary" />
                 </div>
                 <div>
                   <h3>إدارة قاعدة البيانات والنسخ الاحتياطي</h3>
@@ -578,7 +677,7 @@ const AdminSettings = () => {
 
               <div className="database-overview-stats">
                 <div className="db-stat-box">
-                  <Layers size={22} className="text-primary" />
+                  <Layers size={24} className="text-primary" />
                   <div>
                     <span className="db-stat-label">الخدمات والقاعات المسجلة</span>
                     <strong className="db-stat-value">{listings.length} خدمة</strong>
@@ -586,7 +685,7 @@ const AdminSettings = () => {
                 </div>
 
                 <div className="db-stat-box">
-                  <CheckCircle2 size={22} className="text-success" />
+                  <CheckCircle2 size={24} className="text-success" />
                   <div>
                     <span className="db-stat-label">إجمالي سجلات الحجوزات</span>
                     <strong className="db-stat-value">{bookings.length} حجز</strong>
@@ -594,32 +693,40 @@ const AdminSettings = () => {
                 </div>
 
                 <div className="db-stat-box">
-                  <ShieldCheck size={22} className="text-info" />
+                  <ShieldCheck size={24} className="text-info" />
                   <div>
                     <span className="db-stat-label">حالة التخزين المحلي</span>
-                    <strong className="db-stat-value">آمن ومتزامن (Local Storage)</strong>
+                    <strong className="db-stat-value">آمن ومتزامن (LocalStorage)</strong>
                   </div>
                 </div>
               </div>
 
               <div className="backup-actions-grid">
                 <div className="backup-action-card">
-                  <Download size={28} className="text-primary" />
-                  <h4>تصدير نسخة احتياطية كاملة (JSON)</h4>
-                  <p className="text-muted">
-                    حمّل ملفاً يحتوي على جميع الخدمات، الأسعار، الحجوزات، والإعدادات للاحتفاظ به بأمان.
-                  </p>
+                  <div className="backup-card-top">
+                    <Download size={32} className="text-primary" />
+                    <div>
+                      <h4>تصدير نسخة احتياطية كاملة (JSON)</h4>
+                      <p className="text-muted">
+                        حمّل ملفاً يحتوي على كافة الخدمات، الأسعار، الحجوزات، والكوبونات للاحتفاظ به أو نقله.
+                      </p>
+                    </div>
+                  </div>
                   <button type="button" className="btn btn-outline" onClick={handleExportBackup}>
                     <Download size={16} /> تحميل النسخة الاحتياطية (.json)
                   </button>
                 </div>
 
                 <div className="backup-action-card reset-card">
-                  <RotateCcw size={28} className="text-danger" />
-                  <h4>استعادة البيانات الافتراضية للمنصة</h4>
-                  <p className="text-muted">
-                    إعادة ضبط الموقع والقاعات التجريبية الأصلية ومسح التعديلات المحلية المخزنة.
-                  </p>
+                  <div className="backup-card-top">
+                    <RotateCcw size={32} className="text-danger" />
+                    <div>
+                      <h4>استعادة البيانات الافتراضية للمنصة</h4>
+                      <p className="text-muted">
+                        إعادة ضبط الموقع والبيانات التجريبية الأصلية ومسح التعديلات المحلية المخزنة.
+                      </p>
+                    </div>
+                  </div>
                   <button type="button" className="btn btn-danger-outline" onClick={handleResetData}>
                     <RotateCcw size={16} /> استعادة البيانات الافتراضية
                   </button>
@@ -632,11 +739,15 @@ const AdminSettings = () => {
         {/* Global Bottom Submit Actions */}
         <div className="settings-bottom-actions-bar">
           <div className="settings-bottom-status">
-            <ShieldCheck size={16} className="text-primary" />
-            <span>يتم حفظ جميع التغييرات في التخزين المحلي ومزامنتها لحظياً في خوادم Supabase.</span>
+            <ShieldCheck size={18} className="text-primary" />
+            <span>يتم حفظ جميع التغييرات في التخزين المحلي ومزامنتها لحظياً في خوادم Supabase السحابية.</span>
           </div>
-          <button type="submit" className="btn btn-primary btn-lg">
-            <Save size={18} /> حفظ ونشر جميع الإعدادات
+          <button 
+            type="submit" 
+            className={`btn btn-primary btn-lg ${savedSuccess ? 'btn-saved-success' : ''}`}
+          >
+            {savedSuccess ? <Check size={18} /> : <Save size={18} />}
+            <span>{savedSuccess ? 'تم حفظ التعديلات بنجاح! 👑' : 'حفظ ونشر جميع الإعدادات'}</span>
           </button>
         </div>
 

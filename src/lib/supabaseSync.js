@@ -125,22 +125,40 @@ export const mapPackageFromDb = (row) => ({
 // Helper mapping for promo codes
 export const mapPromoCodeToDb = (p) => ({
   id: String(p.id),
-  code: p.code || '',
-  discount_percent: Number(p.discountPercent || p.discount || 10),
+  code: (p.code || '').toUpperCase().trim(),
+  discount_type: p.discountType || 'percentage',
+  discount_value: Number(p.discountValue !== undefined ? p.discountValue : (p.discountPercent || p.discount || 10)),
+  discount_percent: p.discountType === 'percentage' 
+    ? Number(p.discountValue !== undefined ? p.discountValue : (p.discountPercent || 10))
+    : 0,
+  min_booking_amount: Number(p.minBookingAmount || 0),
+  usage_count: Number(p.usageCount || 0),
   active: p.active !== undefined ? Boolean(p.active) : true,
   expiry: p.expiry || '',
   description: p.description || ''
 });
 
-export const mapPromoCodeFromDb = (row) => ({
-  id: isNaN(Number(row.id)) ? row.id : Number(row.id),
-  code: row.code,
-  discountPercent: Number(row.discount_percent || 10),
-  discount: Number(row.discount_percent || 10),
-  active: Boolean(row.active),
-  expiry: row.expiry,
-  description: row.description
-});
+export const mapPromoCodeFromDb = (row) => {
+  const discountType = row.discount_type || 'percentage';
+  const val = Number(
+    row.discount_value !== undefined && row.discount_value !== null
+      ? row.discount_value
+      : (row.discount_percent || 10)
+  );
+
+  return {
+    id: isNaN(Number(row.id)) ? row.id : Number(row.id),
+    code: (row.code || '').toUpperCase().trim(),
+    discountType,
+    discountValue: val,
+    discountPercent: discountType === 'percentage' ? val : 0,
+    minBookingAmount: Number(row.min_booking_amount || 0),
+    usageCount: Number(row.usage_count || 0),
+    active: row.active !== undefined ? Boolean(row.active) : true,
+    expiry: row.expiry || '',
+    description: row.description || ''
+  };
+};
 
 /**
  * Fetch all initial data from Supabase

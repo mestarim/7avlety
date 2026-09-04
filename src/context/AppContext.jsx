@@ -245,7 +245,31 @@ export const AppProvider = ({ children }) => {
   const [promoCodes, setPromoCodes] = useState(() => {
     const saved = localStorage.getItem('7avelty_promocodes');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p) => {
+            const discountType = p.discountType || 'percentage';
+            const val = Number(
+              p.discountValue !== undefined && p.discountValue !== null
+                ? p.discountValue
+                : (p.discountPercent || p.discount || 10)
+            );
+            return {
+              id: p.id,
+              code: (p.code || '').toUpperCase().trim(),
+              discountType,
+              discountValue: val,
+              discountPercent: discountType === 'percentage' ? val : 0,
+              minBookingAmount: Number(p.minBookingAmount || 0),
+              usageCount: Number(p.usageCount || 0),
+              active: p.active !== undefined ? Boolean(p.active) : true,
+              expiry: p.expiry || '',
+              description: p.description || ''
+            };
+          });
+        }
+      } catch (e) { console.error(e); }
     }
     return initialPromoCodes;
   });
@@ -449,38 +473,138 @@ export const AppProvider = ({ children }) => {
   // Promo Code Validation & Application
   const applyPromoCode = (codeStr, orderAmount) => {
     if (!codeStr || !codeStr.trim()) {
-      return { valid: false, message: 'يرجى كتابة رمز الكوبون' };
+      return { 
+        valid: false, 
+        message: language === 'ar' ? 'يرجى كتابة رمز الكوبون' : (language === 'fr' ? 'Veuillez saisir un code promo' : 'Please enter a promo code') 
+      };
     }
     const cleanCode = codeStr.trim().toUpperCase();
-    const found = promoCodes.find((p) => p.code.toUpperCase() === cleanCode && p.active);
+    const found = promoCodes.find((p) => (p.code || '').toUpperCase().trim() === cleanCode);
 
     if (!found) {
-      return { valid: false, message: 'كوبون الخصم غير صحيح أو منتهي الصلاحية' };
+      return { 
+        valid: false, 
+        message: language === 'ar' ? 'كوبون الخصم غير صحيح أو غير موجود' : (language === 'fr' ? 'Code promo invalide ou introuvable' : 'Invalid promo code') 
+      };
     }
 
-    const discountAmount = Math.round((orderAmount * found.discountPercent) / 100);
-    const finalAmount = Math.max(0, orderAmount - discountAmount);
+    if (!found.active) {
+      return { 
+        valid: false, 
+        message: language === 'ar' ? 'هذا الكوبون غير مفعّل حالياً' : (language === 'fr' ? 'Ce coupon est actuellement désactivé' : 'This coupon is currently inactive') 
+      };
+    }
+
+    // Expiry check
+    if (found.expiry) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (found.expiry < todayStr) {
+        return {
+          valid: false,
+          message: language === 'ar' ? 'عذراً، هذا الكوبون انتهت فترة صلاحيته' : (language === 'fr' ? 'Ce coupon a expiré' : 'This coupon has expired')
+        };
+      }
+    }
+
+    // Minimum booking amount check
+    const minAmount = Number(found.minBookingAmount || 0);
+    const amount = Number(orderAmount || 0);
+    if (minAmount > 0 && amount < minAmount) {
+      return {
+        valid: false,
+        message: language === 'ar' 
+          ? `الحد الأدنى للاستفادة من هذا الكوبون هو ${minAmount.toLocaleString()} ${settings.currency}` 
+          : (language === 'fr' 
+            ? `Le montant minimum pour ce coupon est de ${minAmount.toLocaleString()} ${settings.currency}` 
+            : `Minimum booking amount for this coupon is ${minAmount.toLocaleString()} ${settings.currency}`)
+      };
+    }
+
+    // Calculate discount
+    const discountType = found.discountType || 'percentage';
+    const discountVal = Number(found.discountValue !== undefined ? found.discountValue : (found.discountPercent || 10));
+    let discountAmount = 0;
+
+    if (discountType === 'fixed') {
+      discountAmount = Math.min(amount, discountVal);
+    } else {
+      discountAmount = Math.round((amount * discountVal) / 100);
+    }
+
+    const finalAmount = Math.max(0, amount - discountAmount);
+
+    const successMessage = discountType === 'fixed'
+      ? (language === 'ar' 
+          ? `تم تطبيق خصم فوري بقيمة ${discountAmount.toLocaleString()} ${settings.currency} بنجاح!` 
+          : (language === 'fr' ? `Remise immédiate de ${discountAmount.toLocaleString()} ${settings.currency} appliquée !` : `Flat discount of ${discountAmount.toLocaleString()} ${settings.currency} applied!`))
+      : (language === 'ar'
+          ? `تم تطبيق خصم ${discountVal}% بنجاح! (وفرت ${discountAmount.toLocaleString()} ${settings.currency})`
+          : (language === 'fr' ? `Remise de ${discountVal}% appliquée !` : `${discountVal}% discount applied!`));
 
     return {
       valid: true,
+      promoId: found.id,
       code: found.code,
-      discountPercent: found.discountPercent,
+      discountType,
+      discountValue: discountVal,
+      discountPercent: discountType === 'percentage' ? discountVal : 0,
       discountAmount,
       finalAmount,
-      message: `تم تطبيق خصم ${found.discountPercent}% بنجاح!`
+      message: successMessage
     };
   };
 
   const addPromoCode = (newPromo) => {
+    const discountType = newPromo.discountType || 'percentage';
+    const val = Number(newPromo.discountValue || 10);
     const promoWithId = {
-      ...newPromo,
-      id: Date.now(),
-      code: newPromo.code.toUpperCase(),
-      active: true
+      id: newPromo.id || `pc-${Date.now()}`,
+      code: (newPromo.code || '').toUpperCase().trim(),
+      discountType,
+      discountValue: val,
+      discountPercent: discountType === 'percentage' ? val : 0,
+      minBookingAmount: Number(newPromo.minBookingAmount || 0),
+      expiry: newPromo.expiry || '',
+      description: newPromo.description || `خصم ${val}${discountType === 'percentage' ? '%' : ' ' + settings.currency}`,
+      active: true,
+      usageCount: 0
     };
     setPromoCodes((prev) => [promoWithId, ...prev]);
     syncPromoCodeToSupabase(promoWithId);
     showToast(`تمت إضافة الكوبون ${promoWithId.code} بنجاح! 🏷️`, 'success');
+    return promoWithId;
+  };
+
+  const updatePromoCode = (id, updatedData) => {
+    setPromoCodes((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          const discountType = updatedData.discountType || p.discountType || 'percentage';
+          const val = Number(
+            updatedData.discountValue !== undefined 
+              ? updatedData.discountValue 
+              : p.discountValue
+          );
+          const updated = {
+            ...p,
+            ...updatedData,
+            code: updatedData.code ? updatedData.code.toUpperCase().trim() : p.code,
+            discountType,
+            discountValue: val,
+            discountPercent: discountType === 'percentage' ? val : 0,
+            minBookingAmount: Number(
+              updatedData.minBookingAmount !== undefined 
+                ? updatedData.minBookingAmount 
+                : (p.minBookingAmount || 0)
+            )
+          };
+          syncPromoCodeToSupabase(updated);
+          return updated;
+        }
+        return p;
+      })
+    );
+    showToast('تم تحديث بيانات الكوبون بنجاح! 🏷️', 'success');
   };
 
   const deletePromoCode = (id) => {
@@ -685,6 +809,21 @@ export const AppProvider = ({ children }) => {
     };
     setBookings((prev) => [newBooking, ...prev]);
     syncBookingToSupabase(newBooking);
+
+    // Increment promo usage if a promo code was applied
+    if (bookingData.promoCode) {
+      setPromoCodes((prev) =>
+        prev.map((p) => {
+          if ((p.code || '').toUpperCase().trim() === (bookingData.promoCode || '').toUpperCase().trim()) {
+            const updated = { ...p, usageCount: (p.usageCount || 0) + 1 };
+            syncPromoCodeToSupabase(updated);
+            return updated;
+          }
+          return p;
+        })
+      );
+    }
+
     showToast('تم استلام طلب حجزك بنجاح! سنتواصل معك للتأكيد 💍', 'success');
     return newBooking;
   };
@@ -802,6 +941,7 @@ export const AppProvider = ({ children }) => {
         promoCodes,
         applyPromoCode,
         addPromoCode,
+        updatePromoCode,
         deletePromoCode,
         togglePromoCodeStatus,
         getBookedDates,
