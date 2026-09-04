@@ -14,7 +14,7 @@ import {
 import { useApp } from '../context/useApp';
 
 const InvoiceModal = () => {
-  const { invoiceModalBooking, setInvoiceModalBooking, settings } = useApp();
+  const { invoiceModalBooking, setInvoiceModalBooking, settings, t, language } = useApp();
 
   if (!invoiceModalBooking) return null;
 
@@ -38,18 +38,18 @@ const InvoiceModal = () => {
   };
 
   const statusLabel = {
-    confirmed: 'مؤكد ومقبول ✅',
-    pending: 'قيد المراجعة ⏳',
-    completed: 'مكتمل بنجاح 🏆',
-    cancelled: 'ملغى ❌'
+    confirmed: language === 'ar' ? 'مؤكد ومقبول ✅' : (language === 'fr' ? 'Confirmé ✅' : 'Confirmed ✅'),
+    pending: language === 'ar' ? 'قيد المراجعة ⏳' : (language === 'fr' ? 'En cours d’examen ⏳' : 'Under Review ⏳'),
+    completed: language === 'ar' ? 'مكتمل بنجاح 🏆' : (language === 'fr' ? 'Terminé 🏆' : 'Completed 🏆'),
+    cancelled: language === 'ar' ? 'ملغى ❌' : (language === 'fr' ? 'Annulé ❌' : 'Cancelled ❌')
   }[invoiceModalBooking.status] || invoiceModalBooking.status;
 
   const paymentLabels = {
-    bankily: 'بنكيلي (Bankily)',
-    seddad: 'السداد (Seddad)',
-    masrvi: 'مصرفي (Masrvi)',
-    click: 'كليك (Click)',
-    cash: 'دفع نقدي عند المعاينة'
+    bankily: t('booking.bankily', 'بنكيلي (Bankily)'),
+    seddad: t('booking.seddad', 'السداد (Seddad)'),
+    masrvi: t('booking.masrvi', 'مصرفي (Masrvi)'),
+    click: t('booking.click', 'كليك (Click)'),
+    cash: t('booking.cash', 'دفع نقدي')
   };
 
   const basePrice = Number(invoiceModalBooking.originalPrice || invoiceModalBooking.price) || 0;
@@ -75,7 +75,9 @@ const InvoiceModal = () => {
                 <ShieldCheck size={32} className="text-primary" />
                 <div>
                   <h2>7avelty | حفلتي</h2>
-                  <p className="invoice-sub-brand">منصة حجز المناسبات والأفراح الأولى في موريتانيا</p>
+                  <p className="invoice-sub-brand">
+                    {language === 'ar' ? 'منصة حجز المناسبات والأفراح الأولى في موريتانيا' : (language === 'fr' ? 'Première plateforme événementielle en Mauritanie' : 'Mauritania’s Premier Event & Wedding Platform')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -85,8 +87,12 @@ const InvoiceModal = () => {
                   {statusLabel}
                 </span>
               </div>
-              <div className="invoice-number">رقم السند: <strong>{invoiceModalBooking.id}</strong></div>
-              <div className="invoice-date text-muted">تاريخ الإصدار: {invoiceModalBooking.createdAt || '2026-08-15'}</div>
+              <div className="invoice-number">
+                {language === 'ar' ? 'رقم السند:' : (language === 'fr' ? 'Réf Facture :' : 'Invoice ID:')} <strong>{invoiceModalBooking.id}</strong>
+              </div>
+              <div className="invoice-date text-muted">
+                {language === 'ar' ? 'تاريخ الإصدار:' : (language === 'fr' ? 'Date d’émission :' : 'Issue Date:')} {invoiceModalBooking.createdAt || '2026-08-15'}
+              </div>
             </div>
           </div>
 
@@ -95,21 +101,21 @@ const InvoiceModal = () => {
           {/* Client & Booking Info Cards */}
           <div className="invoice-grid-two">
             <div className="invoice-box">
-              <h4>بيانات العميل المستفيد:</h4>
-              <p><User size={13} /> <strong>الاسم:</strong> {invoiceModalBooking.customerName}</p>
-              <p><Phone size={13} /> <strong>الهاتف:</strong> {invoiceModalBooking.phone}</p>
-              <p><MapPin size={13} /> <strong>المدينة:</strong> {invoiceModalBooking.city}</p>
+              <h4>{language === 'ar' ? 'بيانات العميل المستفيد:' : (language === 'fr' ? 'Informations du client :' : 'Client Information:')}</h4>
+              <p><User size={13} /> <strong>{language === 'ar' ? 'الاسم:' : (language === 'fr' ? 'Nom :' : 'Name:')}</strong> {invoiceModalBooking.customerName}</p>
+              <p><Phone size={13} /> <strong>{language === 'ar' ? 'الهاتف:' : (language === 'fr' ? 'Tél :' : 'Phone:')}</strong> {invoiceModalBooking.phone}</p>
+              <p><MapPin size={13} /> <strong>{language === 'ar' ? 'المدينة:' : (language === 'fr' ? 'Ville :' : 'City:')}</strong> {invoiceModalBooking.city}</p>
             </div>
             <div className="invoice-box">
-              <h4>تفاصيل الفعالية والدفع:</h4>
-              <p><Tag size={13} /> <strong>الخدمة:</strong> {invoiceModalBooking.serviceTitle}</p>
-              <p><Calendar size={13} /> <strong>تاريخ المناسبة:</strong> {invoiceModalBooking.date}</p>
+              <h4>{language === 'ar' ? 'تفاصيل الفعالية والدفع:' : (language === 'fr' ? 'Détails de l’événement & paiement :' : 'Event & Payment Details:')}</h4>
+              <p><Tag size={13} /> <strong>{language === 'ar' ? 'الخدمة:' : (language === 'fr' ? 'Prestation :' : 'Service:')}</strong> {invoiceModalBooking.serviceTitle}</p>
+              <p><Calendar size={13} /> <strong>{language === 'ar' ? 'تاريخ المناسبة:' : (language === 'fr' ? 'Date :' : 'Date:')}</strong> {invoiceModalBooking.date}</p>
               <p>
-                <CreditCard size={13} /> <strong>طريقة الدفع:</strong> {paymentLabels[invoiceModalBooking.paymentMethod] || invoiceModalBooking.paymentMethod || 'بنكيلي'}
+                <CreditCard size={13} /> <strong>{language === 'ar' ? 'طريقة الدفع:' : (language === 'fr' ? 'Moyen de paiement :' : 'Payment:')}</strong> {paymentLabels[invoiceModalBooking.paymentMethod] || invoiceModalBooking.paymentMethod || 'Bankily'}
               </p>
               {invoiceModalBooking.paymentRef && (
                 <p style={{ fontSize: '12px' }}>
-                  <strong>المرجع:</strong> <span className="ref-code">{invoiceModalBooking.paymentRef}</span>
+                  <strong>{language === 'ar' ? 'المرجع:' : (language === 'fr' ? 'Réf :' : 'Ref:')}</strong> <span className="ref-code">{invoiceModalBooking.paymentRef}</span>
                 </p>
               )}
             </div>
@@ -117,7 +123,7 @@ const InvoiceModal = () => {
 
           {invoiceModalBooking.notes && (
             <div className="invoice-notes-box">
-              <strong>ملاحظات الحجز:</strong> {invoiceModalBooking.notes}
+              <strong>{language === 'ar' ? 'ملاحظات الحجز:' : (language === 'fr' ? 'Remarques :' : 'Booking Notes:')}</strong> {invoiceModalBooking.notes}
             </div>
           )}
 
@@ -125,10 +131,10 @@ const InvoiceModal = () => {
           <table className="invoice-table">
             <thead>
               <tr>
-                <th>البند والوصف</th>
-                <th>تاريخ المناسبة</th>
-                <th>طريقة السداد</th>
-                <th>المبلغ</th>
+                <th>{language === 'ar' ? 'البند والوصف' : (language === 'fr' ? 'Désignation & Service' : 'Item & Description')}</th>
+                <th>{t('tracker.eventDate', 'تاريخ المناسبة')}</th>
+                <th>{t('tracker.payment', 'طريقة السداد')}</th>
+                <th>{t('tracker.totalAmount', 'المبلغ')}</th>
               </tr>
             </thead>
             <tbody>
@@ -140,7 +146,7 @@ const InvoiceModal = () => {
                   </div>
                 </td>
                 <td>{invoiceModalBooking.date}</td>
-                <td>{paymentLabels[invoiceModalBooking.paymentMethod] || 'بنكيلي'}</td>
+                <td>{paymentLabels[invoiceModalBooking.paymentMethod] || 'Bankily'}</td>
                 <td><strong>{basePrice.toLocaleString()} {settings.currency}</strong></td>
               </tr>
             </tbody>
@@ -148,7 +154,7 @@ const InvoiceModal = () => {
               {discountAmount > 0 && (
                 <tr className="discount-calc-row">
                   <td colSpan="3" style={{ textAlign: 'left', color: 'var(--success)' }}>
-                    خصم الكوبون ({invoiceModalBooking.promoCode || 'عرض خاص'}):
+                    {language === 'ar' ? 'خصم الكوبون' : (language === 'fr' ? 'Remise coupon' : 'Coupon discount')} ({invoiceModalBooking.promoCode || 'PROMO'}):
                   </td>
                   <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>
                     - {discountAmount.toLocaleString()} {settings.currency}
@@ -156,7 +162,9 @@ const InvoiceModal = () => {
                 </tr>
               )}
               <tr>
-                <td colSpan="3" style={{ textAlign: 'left', fontWeight: 'bold' }}>المجموع الصافي للدفع:</td>
+                <td colSpan="3" style={{ textAlign: 'left', fontWeight: 'bold' }}>
+                  {t('booking.amountDue', 'المجموع الصافي للدفع:')}
+                </td>
                 <td>
                   <strong className="text-primary total-price-val">
                     {finalPrice.toLocaleString()} {settings.currency}
@@ -184,37 +192,46 @@ const InvoiceModal = () => {
                 <rect x="58" y="58" width="8" height="8" fill="#cba153" />
               </svg>
               <div className="qr-text">
-                <strong>رمز التحقق الرقمي</strong>
-                <span>امسح الرمز للتحقق من مصداقية السند عبر خوادم حفلتي</span>
+                <strong>{language === 'ar' ? 'رمز التحقق الرقمي' : (language === 'fr' ? 'Code QR de vérification' : 'Digital Verification QR')}</strong>
+                <span>{language === 'ar' ? 'امسح الرمز للتحقق من مصداقية السند عبر خوادم حفلتي' : (language === 'fr' ? 'Scannez pour vérifier l’authenticité du reçu sur les serveurs 7avelty' : 'Scan code to verify invoice authenticity via 7avelty servers')}</span>
               </div>
             </div>
 
             <div className="invoice-official-stamp">
               <div className="stamp-inner">
                 <ShieldCheck size={22} />
-                <span>حفلتي 7AVELTY</span>
-                <strong>معتمد رسمياً</strong>
+                <span>7AVELTY</span>
+                <strong>{language === 'ar' ? 'معتمد رسمياً' : (language === 'fr' ? 'Certifié Conforme' : 'Officially Certified')}</strong>
               </div>
             </div>
           </div>
 
           {/* Footer Note */}
           <div className="invoice-footer-note">
-            <p>شكراً لثقتكم في منصة <strong>حفلتي</strong>. لأي تعديل أو استفسار، يرجى الاتصال بمركز خدمة العملاء: <strong>{settings.phone}</strong></p>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>نواكشوط، تفرغ زينة، موريتانيا • contact@7avelty.mr</span>
+            <p>
+              {language === 'ar' 
+                ? <>شكراً لثقتكم في منصة <strong>حفلتي</strong>. لأي تعديل أو استفسار، يرجى الاتصال بمركز خدمة العملاء: <strong>{settings.phone}</strong></>
+                : (language === 'fr'
+                  ? <>Merci de faire confiance à <strong>7avelty</strong>. Pour toute modification, contactez le service client : <strong>{settings.phone}</strong></>
+                  : <>Thank you for trusting <strong>7avelty</strong>. For any inquiries or edits, please contact support: <strong>{settings.phone}</strong></>
+                )}
+            </p>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              {language === 'ar' ? 'نواكشوط، تفرغ زينة، موريتانيا • contact@7avelty.mr' : 'Nouakchott, Tevragh Zeina, Mauritanie • contact@7avelty.mr'}
+            </span>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="invoice-actions no-print">
           <button className="btn btn-primary" onClick={handlePrint} style={{ flex: 1 }}>
-            <Printer size={16} /> طباعة السند / حفظ PDF
+            <Printer size={16} /> {language === 'ar' ? 'طباعة السند / حفظ PDF' : (language === 'fr' ? 'Imprimer / Sauvegarder PDF' : 'Print / Save PDF')}
           </button>
           <button className="btn btn-outline" onClick={handleShareWhatsApp} style={{ flex: 1 }}>
-            <Share2 size={16} /> مشاركة السند عبر واتساب
+            <Share2 size={16} /> {language === 'ar' ? 'مشاركة السند عبر واتساب' : (language === 'fr' ? 'Partager via WhatsApp' : 'Share on WhatsApp')}
           </button>
           <button className="btn btn-outline" onClick={() => setInvoiceModalBooking(null)}>
-            إغلاق
+            {t('booking.cancel', 'إلغاء')}
           </button>
         </div>
       </div>

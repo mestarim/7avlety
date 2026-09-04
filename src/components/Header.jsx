@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   CalendarDays, 
@@ -22,14 +22,27 @@ const Header = () => {
     theme,
     toggleTheme,
     requestAdminAccess,
-    setIsTrackerModalOpen
+    setIsTrackerModalOpen,
+    language,
+    changeLanguage,
+    t
   } = useApp();
+
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
 
   const handleQuickBook = () => {
     if (listings.length > 0) {
       setBookingModalItem(listings[0]);
     }
   };
+
+  const languagesList = [
+    { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'en', label: 'English', flag: '🇬🇧' }
+  ];
+
+  const currentLangObj = languagesList.find((l) => l.code === language) || languagesList[0];
 
   return (
     <header className="header">
@@ -39,21 +52,53 @@ const Header = () => {
         </div>
         
         <nav className="nav-links">
-          <a href="#" className="nav-link">الرئيسية</a>
-          <a href="#categories" className="nav-link">التصنيفات</a>
+          <a href="#" className="nav-link">{t('nav.home', 'الرئيسية')}</a>
+          <a href="#categories" className="nav-link">{t('nav.categories', 'التصنيفات')}</a>
           <a href="#packages" className="nav-link package-nav-link">
-            <Sparkles size={14} className="text-primary" /> باقات الأعراس
+            <Sparkles size={14} className="text-primary" /> {t('nav.packages', 'باقات الأعراس')}
           </a>
-          <a href="#featured" className="nav-link">العروض والخدمات</a>
-          <a href="#contact" className="nav-link">اتصل بنا</a>
+          <a href="#featured" className="nav-link">{t('nav.listings', 'العروض والخدمات')}</a>
+          <a href="#contact" className="nav-link">{t('nav.contact', 'اتصل بنا')}</a>
         </nav>
 
         <div className="header-actions-row">
+          {/* Language Selector Dropdown */}
+          <div className="lang-switcher-wrapper" style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className="btn-icon-round lang-header-btn"
+              onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+              title="تغيير اللغة / Changer de langue / Change Language"
+              aria-label="تغيير اللغة"
+            >
+              <span className="lang-flag">{currentLangObj.flag}</span>
+            </button>
+
+            {isLangMenuOpen && (
+              <div className="lang-dropdown-menu">
+                {languagesList.map((langItem) => (
+                  <button
+                    key={langItem.code}
+                    type="button"
+                    className={`lang-option-btn ${language === langItem.code ? 'active' : ''}`}
+                    onClick={() => {
+                      changeLanguage(langItem.code);
+                      setIsLangMenuOpen(false);
+                    }}
+                  >
+                    <span className="option-flag">{langItem.flag}</span>
+                    <span className="option-name">{langItem.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Theme Switcher */}
           <button 
             className="btn-icon-round"
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'التبديل إلى المظهر الفاتح اللؤلؤي' : 'التبديل إلى المظهر الليلي الذهبي'}
+            title={theme === 'dark' ? 'التبديل إلى المظهر الفاتح' : 'التبديل إلى المظهر الليلي'}
             aria-label="تبديل الثيم"
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -76,30 +121,30 @@ const Header = () => {
           <button
             className="btn btn-outline tracker-header-btn"
             onClick={() => setIsTrackerModalOpen(true)}
-            title="تتبع حالة حجزك برقم الحجز أو الهاتف"
+            title={t('nav.trackBooking', 'تتبع حجزي')}
           >
             <CalendarCheck2 size={15} className="text-primary" />
-            <span>تتبع حجزي</span>
+            <span>{t('nav.trackBooking', 'تتبع حجزي')}</span>
           </button>
 
           {/* Budget Calculator Trigger */}
           <button
             className="btn btn-outline budget-calc-header-btn"
             onClick={() => setIsBudgetCalculatorOpen(true)}
-            title="حاسبة ميزانية الحفل الذكية"
+            title={t('nav.budgetCalculator', 'حاسبة الميزانية')}
           >
             <Calculator size={15} className="text-primary" />
-            <span>حاسبة الميزانية</span>
+            <span>{t('nav.budgetCalculator', 'حاسبة الميزانية')}</span>
           </button>
 
           {/* Admin Dashboard Switcher with PIN Security */}
           <button
             className="btn btn-outline admin-header-btn"
             onClick={requestAdminAccess}
-            title="الدخول الآمن إلى لوحة تحكم الأدمن"
+            title={t('nav.adminPanel', 'لوحة الأدمن')}
           >
             <ShieldCheck size={15} className="text-primary" />
-            <span>لوحة الأدمن</span>
+            <span>{t('nav.adminPanel', 'لوحة الأدمن')}</span>
           </button>
 
           {/* Quick Book Button */}
@@ -108,7 +153,7 @@ const Header = () => {
             onClick={handleQuickBook}
           >
             <CalendarDays size={15} />
-            <span>حجز مناسبة</span>
+            <span>{t('nav.quickBook', 'حجز مناسبة')}</span>
           </button>
         </div>
       </div>

@@ -27,7 +27,8 @@ const FeaturedListings = () => {
     setFilterKeyword,
     toggleWishlist,
     isWishlisted,
-    settings 
+    settings,
+    t 
   } = useApp();
 
   const [capacityFilter, setCapacityFilter] = useState('all'); // 'all' | 'small' | 'medium' | 'large'
@@ -37,7 +38,7 @@ const FeaturedListings = () => {
 
   // Dynamic category tabs derived from user-managed categories
   const categoryTabs = [
-    { id: 'all', label: 'جميع الخدمات' },
+    { id: 'all', label: t('listings.allTab', 'جميع الخدمات') },
     ...categories.map((c) => ({
       id: c.title || c.name,
       label: c.title || c.name
@@ -45,6 +46,15 @@ const FeaturedListings = () => {
   ];
 
   const cityTabs = ['all', 'نواكشوط', 'نواذيبو', 'روصو', 'كيفه'];
+
+  const getCityLabel = (city) => {
+    if (city === 'all') return t('common.all', 'الكل');
+    if (city === 'نواكشوط') return t('hero.cities.nouakchott', 'نواكشوط');
+    if (city === 'نواذيبو') return t('hero.cities.nouadhibou', 'نواذيبو');
+    if (city === 'روصو') return t('hero.cities.rosso', 'روصو');
+    if (city === 'كيفه') return t('hero.cities.kiffa', 'كيفه');
+    return city;
+  };
 
   // Filtering Logic
   const filteredListings = listings.filter((item) => {
@@ -141,11 +151,11 @@ const FeaturedListings = () => {
       <div className="container">
         <div className="section-header">
           <div className="badge-pill-gold">
-            <Sparkles size={16} className="text-primary" /> مختارات فاخرة لمناسبتك
+            <Sparkles size={16} className="text-primary" /> {t('listings.badge', 'مختارات فاخرة لمناسبتك')}
           </div>
-          <h2 className="section-title">العروض والخدمات المتاحة</h2>
+          <h2 className="section-title">{t('listings.title', 'العروض والخدمات المتاحة')}</h2>
           <p className="section-subtitle">
-            استعرض وحجز قاعات الأفراح، الفنادق، السيارات والمعدات مع توفر التحقق اللحظي والحجز المباشر
+            {t('listings.subtitle', 'استعرض وحجز قاعات الأفراح، الفنادق، السيارات والمعدات مع توفر التحقق اللحظي والحجز المباشر')}
           </p>
         </div>
 
@@ -166,7 +176,7 @@ const FeaturedListings = () => {
           <div className="filter-sub-bar">
             {/* City Selector */}
             <div className="city-filter-group">
-              <span className="filter-label"><MapPin size={14} /> المدينة:</span>
+              <span className="filter-label"><MapPin size={14} /> {t('listings.cityTitle', 'المدينة:')}</span>
               <div className="city-pills">
                 {cityTabs.map((city) => (
                   <button
@@ -174,7 +184,7 @@ const FeaturedListings = () => {
                     className={`city-pill ${filterCity === city ? 'active' : ''}`}
                     onClick={() => setFilterCity(city)}
                   >
-                    {city === 'all' ? 'الكل' : city}
+                    {getCityLabel(city)}
                   </button>
                 ))}
               </div>
@@ -182,18 +192,18 @@ const FeaturedListings = () => {
 
             {/* Sorting Dropdown */}
             <div className="sort-filter-group">
-              <span className="filter-label"><ArrowUpDown size={14} className="text-primary" /> ترتيب:</span>
+              <span className="filter-label"><ArrowUpDown size={14} className="text-primary" /> {t('listings.sortBy', 'ترتيب:')}</span>
               <select
                 className="sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                aria-label="ترتيب وفرز العروض"
+                aria-label={t('listings.sortBy', 'ترتيب')}
               >
-                <option value="featured">المميز والافتراضي 👑</option>
-                <option value="rating">الأعلى تقييماً ⭐</option>
-                <option value="price-asc">السعر: من الأقل للأعلى 💰</option>
-                <option value="price-desc">السعر: من الأعلى للأقل 💎</option>
-                <option value="capacity">السعة: الأكبر فالأصغر 👥</option>
+                <option value="featured">{t('listings.sortFeatured', 'المميز والافتراضي 👑')}</option>
+                <option value="rating">{t('listings.sortRating', 'الأعلى تقييماً ⭐')}</option>
+                <option value="price-asc">{t('listings.sortPriceAsc', 'السعر: من الأقل للأعلى 💰')}</option>
+                <option value="price-desc">{t('listings.sortPriceDesc', 'السعر: من الأعلى للأقل 💎')}</option>
+                <option value="capacity">{t('listings.sortCapacity', 'السعة: الأكبر فالأصغر 👥')}</option>
               </select>
             </div>
 
@@ -202,7 +212,7 @@ const FeaturedListings = () => {
               className={`btn btn-outline btn-sm adv-filter-toggle-btn ${showAdvancedFilters ? 'active' : ''}`}
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
-              <SlidersHorizontal size={14} /> فلاتر متقدمة
+              <SlidersHorizontal size={14} /> {t('listings.advFilters', 'فلاتر متقدمة')}
             </button>
           </div>
 
@@ -212,13 +222,13 @@ const FeaturedListings = () => {
               <div className="adv-filter-grid">
                 {/* Capacity */}
                 <div className="adv-filter-col">
-                  <label><Users size={14} className="text-primary" /> سعة القاعة / الحضور:</label>
+                  <label><Users size={14} className="text-primary" /> {t('listings.capacityLabel', 'سعة القاعة / الحضور:')}</label>
                   <div className="adv-options-row">
                     {[
-                      { id: 'all', label: 'أي سعة' },
-                      { id: 'small', label: 'حتى 200 ضيف' },
-                      { id: 'medium', label: '200 - 500 ضيف' },
-                      { id: 'large', label: 'أكثر من 500 ضيف' }
+                      { id: 'all', label: t('listings.anyCapacity', 'أي سعة') },
+                      { id: 'small', label: t('listings.smallCapacity', 'حتى 200 ضيف') },
+                      { id: 'medium', label: t('listings.mediumCapacity', '200 - 500 ضيف') },
+                      { id: 'large', label: t('listings.largeCapacity', 'أكثر من 500 ضيف') }
                     ].map((c) => (
                       <button
                         key={c.id}
@@ -235,7 +245,7 @@ const FeaturedListings = () => {
                 {/* Price Slider */}
                 <div className="adv-filter-col">
                   <div className="adv-label-row">
-                    <label>الحد الأقصى للسعر:</label>
+                    <label>{t('listings.maxPriceLabel', 'الحد الأقصى للسعر:')}</label>
                     <span className="text-primary font-bold">{maxPriceFilter.toLocaleString()} {settings.currency}</span>
                   </div>
                   <input
@@ -257,10 +267,10 @@ const FeaturedListings = () => {
         {sortedListings.length === 0 ? (
           <div className="empty-listings-state">
             <FilterX size={48} className="text-muted empty-filter-icon" />
-            <h3>لا توجد خدمات مطابقة لبحثك</h3>
-            <p className="text-muted">جرب تغيير معايير البحث أو تصفية تصنيف أو مدينة أخرى</p>
+            <h3>{t('listings.noResults', 'لا توجد خدمات مطابقة لبحثك')}</h3>
+            <p className="text-muted">{t('listings.noResultsSub', 'جرب تغيير معايير البحث أو تصفية تصنيف أو مدينة أخرى')}</p>
             <button className="btn btn-outline" onClick={handleResetFilters}>
-              إعادة ضبط الفلاتر
+              {t('listings.resetFilters', 'إعادة ضبط الفلاتر')}
             </button>
           </div>
         ) : (
@@ -284,15 +294,15 @@ const FeaturedListings = () => {
                         e.stopPropagation();
                         toggleWishlist(item.id);
                       }}
-                      title={wish ? 'إزالة من المفضلة' : 'حفظ في المفضلة'}
-                      aria-label="حفظ في المفضلة"
+                      title={wish ? t('listings.removeFav', 'إزالة من المفضلة') : t('listings.saveFav', 'حفظ في المفضلة')}
+                      aria-label={wish ? t('listings.removeFav', 'إزالة من المفضلة') : t('listings.saveFav', 'حفظ في المفضلة')}
                     >
                       <Heart size={18} fill={wish ? '#ef4444' : 'rgba(0,0,0,0.3)'} color={wish ? '#ef4444' : '#fff'} />
                     </button>
 
                     {item.capacity && (
                       <span className="listing-capacity-tag">
-                        <Users size={12} /> {item.capacity} ضيف
+                        <Users size={12} /> {item.capacity} {t('listings.guests', 'ضيف')}
                       </span>
                     )}
                   </div>
@@ -323,7 +333,7 @@ const FeaturedListings = () => {
 
                     <div className="listing-footer">
                       <div className="listing-price-box">
-                        <span className="price-label">يبدأ من</span>
+                        <span className="price-label">{t('listings.startsFrom', 'يبدأ من')}</span>
                         <span className="price-value">{item.price}</span>
                       </div>
 
@@ -333,8 +343,8 @@ const FeaturedListings = () => {
                           type="button"
                           className="btn-icon-round whatsapp-card-btn"
                           onClick={(e) => handleQuickWhatsApp(e, item)}
-                          title="استفسار سريع عبر واتساب"
-                          aria-label="واتساب"
+                          title={t('listings.whatsappInquiry', 'استفسار سريع عبر واتساب')}
+                          aria-label={t('listings.whatsappInquiry', 'واتساب')}
                         >
                           <MessageCircle size={16} />
                         </button>
@@ -346,7 +356,7 @@ const FeaturedListings = () => {
                             setBookingModalItem(item);
                           }}
                         >
-                          <CalendarDays size={14} /> حجز الآن
+                          <CalendarDays size={14} /> {t('listings.bookNow', 'حجز الآن')}
                         </button>
                       </div>
                     </div>

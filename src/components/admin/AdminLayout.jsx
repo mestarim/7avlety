@@ -33,30 +33,32 @@ const AdminLayout = () => {
     bookings, 
     promoCodes, 
     logoutAdmin,
-    isCloudConnected 
+    isCloudConnected,
+    t,
+    language 
   } = useApp();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const pendingCount = bookings.filter((b) => b.status === 'pending').length;
 
   const navItems = [
-    { id: 'overview', label: 'لوحة التحكم والإحصائيات', icon: <LayoutDashboard size={20} /> },
-    { id: 'listings', label: 'إدارة الخدمات والقاعات', icon: <Building size={20} /> },
-    { id: 'packages', label: 'إدارة باقات الأعراس', icon: <Sparkles size={20} /> },
+    { id: 'overview', label: t('admin.overview', 'لوحة التحكم والإحصائيات'), icon: <LayoutDashboard size={20} /> },
+    { id: 'listings', label: t('admin.listings', 'إدارة الخدمات والقاعات'), icon: <Building size={20} /> },
+    { id: 'packages', label: t('admin.packages', 'إدارة باقات الأعراس'), icon: <Sparkles size={20} /> },
     { 
       id: 'bookings', 
-      label: 'إدارة الحجوزات والطلبات', 
+      label: t('admin.bookings', 'إدارة الحجوزات والطلبات'), 
       icon: <CalendarCheck size={20} />,
       badge: pendingCount > 0 ? pendingCount : null 
     },
     { 
       id: 'promos', 
-      label: 'كوبونات الخصم والعروض', 
+      label: t('admin.promos', 'كوبونات الخصم والعروض'), 
       icon: <Tag size={20} />,
       badge: promoCodes.filter((p) => p.active).length > 0 ? promoCodes.filter((p) => p.active).length : null 
     },
-    { id: 'categories', label: 'الأقسام والتصنيفات', icon: <Layers size={20} /> },
-    { id: 'settings', label: 'الإعدادات العامة', icon: <Settings size={20} /> },
+    { id: 'categories', label: t('admin.categories', 'الأقسام والتصنيفات'), icon: <Layers size={20} /> },
+    { id: 'settings', label: t('admin.settings', 'الإعدادات العامة'), icon: <Settings size={20} /> },
   ];
 
   return (
@@ -73,7 +75,9 @@ const AdminLayout = () => {
             <ShieldCheck size={26} className="text-primary" />
             <div>
               <div className="brand-name">7avelty <span className="text-primary">Admin</span></div>
-              <span className="brand-subtitle">لوحة الإدارة السحابية</span>
+              <span className="brand-subtitle">
+                {language === 'ar' ? 'لوحة الإدارة السحابية' : (language === 'fr' ? 'Administration Cloud' : 'Cloud Admin Panel')}
+              </span>
             </div>
           </div>
           <button className="admin-mobile-close" onClick={() => setIsMobileNavOpen(false)}>
@@ -100,10 +104,10 @@ const AdminLayout = () => {
 
         <div className="admin-sidebar-footer">
           <button className="btn btn-outline admin-switch-view-btn mb-2" onClick={() => setCurrentView('client')}>
-            <Globe size={18} /> عرض واجهة الزوار
+            <Globe size={18} /> {t('admin.viewStore', 'عرض واجهة الزوار')}
           </button>
-          <button className="btn btn-outline admin-logout-btn" onClick={logoutAdmin} title="تسجيل الخروج وقفل اللوحة">
-            <LogOut size={16} /> تسجيل الخروج
+          <button className="btn btn-outline admin-logout-btn" onClick={logoutAdmin} title={t('admin.logout', 'تسجيل الخروج')}>
+            <LogOut size={16} /> {t('admin.logout', 'تسجيل الخروج')}
           </button>
         </div>
       </aside>
@@ -125,29 +129,29 @@ const AdminLayout = () => {
             {/* Cloud Status Pill */}
             <div className={`admin-cloud-pill ${isCloudConnected ? 'connected' : 'local'}`} title="حالة الربط السحابي بقاعدة البيانات">
               <Database size={15} />
-              <span>{isCloudConnected ? 'Supabase متصل 🟢' : 'تخزين محلي 💾'}</span>
+              <span>{isCloudConnected ? 'Supabase 🟢' : (language === 'ar' ? 'تخزين محلي 💾' : 'Local 💾')}</span>
             </div>
 
             {pendingCount > 0 && (
               <div className="admin-notification-pill" title={`${pendingCount} طلبات حجز بانتظار التأكيد`}>
                 <Bell size={16} className="text-warning" />
-                <span>{pendingCount} حجز جديد</span>
+                <span>{pendingCount} {language === 'ar' ? 'حجز جديد' : (language === 'fr' ? 'nouveau' : 'new')}</span>
               </div>
             )}
 
             <button
               className="btn btn-primary btn-sm switch-store-btn"
               onClick={() => setCurrentView('client')}
-              title="الرجوع إلى موقع حفلتي للزوار"
+              title={language === 'ar' ? 'الرجوع إلى موقع حفلتي للزوار' : (language === 'fr' ? 'Retour au site public' : 'Back to public site')}
             >
-              <ArrowLeft size={16} /> العودة للموقع
+              <ArrowLeft size={16} /> {language === 'ar' ? 'العودة للموقع' : (language === 'fr' ? 'Voir le site' : 'Back to site')}
             </button>
 
             <div className="admin-profile-pill">
-              <div className="avatar-circle">أدمن</div>
+              <div className="avatar-circle">AD</div>
               <div className="admin-profile-meta">
-                <strong>مدير المنصة</strong>
-                <span className="status-dot-online">متصل الآن 🟢</span>
+                <strong>{language === 'ar' ? 'مدير المنصة' : 'Admin 7avelty'}</strong>
+                <span className="status-dot-online">{language === 'ar' ? 'متصل الآن 🟢' : 'Online 🟢'}</span>
               </div>
             </div>
           </div>

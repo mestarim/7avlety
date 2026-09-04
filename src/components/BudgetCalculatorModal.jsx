@@ -15,7 +15,9 @@ const BudgetCalculatorModal = () => {
     setIsBudgetCalculatorOpen, 
     listings, 
     setBookingModalItem,
-    settings 
+    settings,
+    t,
+    language 
   } = useApp();
 
   const [budget, setBudget] = useState(1800000);
@@ -36,10 +38,10 @@ const BudgetCalculatorModal = () => {
 
   // Preset quick budgets
   const budgetPresets = [
-    { label: 'اقتصادي', amount: 900000 },
-    { label: 'متوسط راقٍ', amount: 1800000 },
-    { label: 'فاخر VIP', amount: 3000000 },
-    { label: 'ملكي أسطوري', amount: 5000000 },
+    { label: language === 'ar' ? 'اقتصادي' : (language === 'fr' ? 'Économique' : 'Budget'), amount: 900000 },
+    { label: language === 'ar' ? 'متوسط راقٍ' : (language === 'fr' ? 'Standard Plus' : 'Premium'), amount: 1800000 },
+    { label: language === 'ar' ? 'فاخر VIP' : (language === 'fr' ? 'Luxe VIP' : 'Luxury VIP'), amount: 3000000 },
+    { label: language === 'ar' ? 'ملكي أسطوري' : (language === 'fr' ? 'Royal Légendaire' : 'Royal Grand'), amount: 5000000 },
   ];
 
   // Smart matching algorithm
@@ -58,7 +60,7 @@ const BudgetCalculatorModal = () => {
 
       if (chosenHall) {
         recommended.push({
-          role: 'القاعة والمقر',
+          role: language === 'ar' ? 'القاعة والمقر' : (language === 'fr' ? 'Salle & Lieu' : 'Venue & Hall'),
           item: chosenHall,
           cost: chosenHall.numericPrice
         });
@@ -72,7 +74,7 @@ const BudgetCalculatorModal = () => {
       const chosenCar = budget > 2000000 ? cars[0] : (cars[1] || cars[0]);
       if (chosenCar) {
         recommended.push({
-          role: 'سيارة وموكب الزفاف',
+          role: language === 'ar' ? 'سيارة وموكب الزفاف' : (language === 'fr' ? 'Cortège de mariage' : 'Wedding Car'),
           item: chosenCar,
           cost: chosenCar.numericPrice
         });
@@ -86,7 +88,7 @@ const BudgetCalculatorModal = () => {
       const chosenSound = soundItems[0];
       if (chosenSound) {
         recommended.push({
-          role: 'الصوتيات وهندسة الإضاءة',
+          role: language === 'ar' ? 'الصوتيات وهندسة الإضاءة' : (language === 'fr' ? 'Sonorisation & DJ' : 'Sound & Lighting'),
           item: chosenSound,
           cost: chosenSound.numericPrice
         });
@@ -100,7 +102,7 @@ const BudgetCalculatorModal = () => {
       const chosenPhoto = photoItems[0];
       if (chosenPhoto) {
         recommended.push({
-          role: 'التصوير والتوثيق السينمائي',
+          role: language === 'ar' ? 'التصوير والتوثيق السينمائي' : (language === 'fr' ? 'Photo & Cinéma' : 'Photography & Video'),
           item: chosenPhoto,
           cost: chosenPhoto.numericPrice
         });
@@ -114,7 +116,7 @@ const BudgetCalculatorModal = () => {
       const chosenGift = giftItems[0];
       if (chosenGift) {
         recommended.push({
-          role: 'هدايا الضيافة والبخور',
+          role: language === 'ar' ? 'هدايا الضيافة والبخور' : (language === 'fr' ? 'Accueil & Cadeaux' : 'Hospitality & Gifts'),
           item: chosenGift,
           cost: chosenGift.numericPrice
         });
@@ -136,11 +138,11 @@ const BudgetCalculatorModal = () => {
 
     setBookingModalItem({
       id: `calc-plan-${Date.now()}`,
-      title: `خطة حفل مخصصة (${guests} ضيف)`,
-      badge: 'توليفة ميزانية ذكية',
+      title: language === 'ar' ? `خطة حفل مخصصة (${guests} ضيف)` : (language === 'fr' ? `Formule personnalisée (${guests} invités)` : `Custom Event Plan (${guests} guests)`),
+      badge: language === 'ar' ? 'توليفة ميزانية ذكية' : (language === 'fr' ? 'Pack Budget Intelligent' : 'Smart Budget Plan'),
       price: `${allocatedTotal.toLocaleString()} ${settings.currency}`,
       numericPrice: allocatedTotal,
-      location: 'نواكشوط (خطة مخصصة)',
+      location: language === 'ar' ? 'نواكشوط (خطة مخصصة)' : (language === 'fr' ? 'Nouakchott (Personnalisé)' : 'Nouakchott (Custom)'),
       image: recommended[0]?.item.image || 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=800&auto=format&fit=crop',
       notesDefault: `خطة حفل مخصصة تم توليدها بحاسبة الميزانية:\nميزانية العميل: ${budget.toLocaleString()} ${settings.currency}\nعدد الضيوف: ${guests}\nالخدمات الموصى بها:\n${notesSummary}`
     });
@@ -165,9 +167,9 @@ const BudgetCalculatorModal = () => {
             <Calculator size={28} className="text-primary" />
           </div>
           <div>
-            <h2>حاسبة ميزانية الحفل الذكية</h2>
+            <h2>{t('calculator.title', 'حاسبة ميزانية الحفل الذكية')}</h2>
             <p className="text-muted">
-              حدد ميزانيتك وعدد ضيوفك ودعنا نبتكر لك الخطة المثالية بأفضل الأسعار المتاحة في موريتانيا
+              {t('calculator.subtitle', 'حدد ميزانيتك وعدد ضيوفك ودعنا نبتكر لك الخطة المثالية بأفضل الأسعار المتاحة في موريتانيا')}
             </p>
           </div>
         </div>
@@ -178,7 +180,7 @@ const BudgetCalculatorModal = () => {
             {/* Budget Slider */}
             <div className="calc-form-group">
               <div className="calc-label-row">
-                <label>ميزانيتك التقديرية الإجمالية:</label>
+                <label>{t('calculator.totalBudget', 'ميزانيتك التقديرية الإجمالية:')}</label>
                 <span className="calc-live-val">
                   {Number(budget).toLocaleString()} {settings.currency}
                 </span>
@@ -209,8 +211,8 @@ const BudgetCalculatorModal = () => {
             {/* Guest Count */}
             <div className="calc-form-group">
               <div className="calc-label-row">
-                <label><Users size={16} /> عدد الضيوف المتوقع:</label>
-                <span className="calc-live-val">{guests} ضيف</span>
+                <label><Users size={16} /> {t('calculator.guestsCount', 'عدد الضيوف المتوقع:')}</label>
+                <span className="calc-live-val">{guests} {t('listings.guests', 'ضيف')}</span>
               </div>
               <input 
                 type="range" 
@@ -225,14 +227,14 @@ const BudgetCalculatorModal = () => {
 
             {/* Required Services Selection */}
             <div className="calc-form-group">
-              <label className="calc-subheading">الخدمات التي ترغب بإدراجها في الخطة:</label>
+              <label className="calc-subheading">{t('calculator.includedServices', 'الخدمات التي ترغب بإدراجها في الخطة:')}</label>
               <div className="calc-services-chips">
                 {[
-                  { key: 'hall', label: 'القاعة والمكان' },
-                  { key: 'car', label: 'سيارة الزفاف' },
-                  { key: 'sound', label: 'الصوتيات والدي جي' },
-                  { key: 'photography', label: 'التصوير والتوثيق' },
-                  { key: 'hospitality', label: 'الهدايا والضيافة' }
+                  { key: 'hall', label: t('calculator.hall', 'القاعة والمكان') },
+                  { key: 'car', label: t('calculator.car', 'سيارة الزفاف') },
+                  { key: 'sound', label: t('calculator.sound', 'الصوتيات والدي جي') },
+                  { key: 'photography', label: t('calculator.photography', 'التصوير والتوثيق') },
+                  { key: 'hospitality', label: t('calculator.hospitality', 'الهدايا والضيافة') }
                 ].map((s) => (
                   <button
                     key={s.key}
@@ -252,13 +254,13 @@ const BudgetCalculatorModal = () => {
             <div className="calc-plan-card">
               <div className="calc-plan-header">
                 <Sparkles size={20} className="text-primary" />
-                <h4>الخطة المقترحة لمناسبتك</h4>
+                <h4>{t('calculator.suggestedPackage', 'الخطة المقترحة لمناسبتك')}</h4>
               </div>
 
               <div className="calc-plan-items">
                 {recommended.length === 0 ? (
                   <p className="text-muted" style={{ padding: '20px', textAlign: 'center' }}>
-                    يرجى تفعيل خدمة واحدة على الأقل للاقتراح
+                    {language === 'ar' ? 'يرجى تفعيل خدمة واحدة على الأقل للاقتراح' : (language === 'fr' ? 'Veuillez sélectionner au moins un service' : 'Please select at least one service')}
                   </p>
                 ) : (
                   recommended.map((rec, idx) => (
@@ -278,7 +280,7 @@ const BudgetCalculatorModal = () => {
               {/* Total & Comparison */}
               <div className="calc-total-box">
                 <div className="total-row">
-                  <span>إجمالي تكلفة الخطة المقترحة:</span>
+                  <span>{t('calculator.estimatedCost', 'إجمالي تكلفة الخطة المقترحة:')}</span>
                   <strong className="total-val text-primary">
                     {allocatedTotal.toLocaleString()} {settings.currency}
                   </strong>
@@ -286,11 +288,11 @@ const BudgetCalculatorModal = () => {
                 <div className="budget-status-indicator">
                   {diffBudget >= 0 ? (
                     <span className="status-saved">
-                      ✅ ضمن الميزانية المحددة (فائض: {diffBudget.toLocaleString()} {settings.currency})
+                      {language === 'ar' ? `✅ ضمن الميزانية المحددة (فائض: ${diffBudget.toLocaleString()} ${settings.currency})` : (language === 'fr' ? `✅ Dans votre budget (Économie : ${diffBudget.toLocaleString()} ${settings.currency})` : `✅ Within budget (Surplus: ${diffBudget.toLocaleString()} ${settings.currency})`)}
                     </span>
                   ) : (
                     <span className="status-exceeded">
-                      ⚠️ تجاوز الميزانية بمقدار: {Math.abs(diffBudget).toLocaleString()} {settings.currency}
+                      {language === 'ar' ? `⚠️ تجاوز الميزانية بمقدار: ${Math.abs(diffBudget).toLocaleString()} ${settings.currency}` : (language === 'fr' ? `⚠️ Dépassement de budget : ${Math.abs(diffBudget).toLocaleString()} ${settings.currency}` : `⚠️ Budget exceeded by: ${Math.abs(diffBudget).toLocaleString()} ${settings.currency}`)}
                     </span>
                   )}
                 </div>
@@ -301,7 +303,7 @@ const BudgetCalculatorModal = () => {
                 onClick={handleBookCustomBundle}
                 disabled={recommended.length === 0}
               >
-                <CalendarDays size={18} /> احجز هذه التوليفة الآن
+                <CalendarDays size={18} /> {t('calculator.bookPlan', 'احجز هذه التوليفة الآن')}
               </button>
             </div>
           </div>

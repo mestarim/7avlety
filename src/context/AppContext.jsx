@@ -21,6 +21,7 @@ import {
   deletePromoCodeFromSupabase,
   syncSettingsToSupabase
 } from '../lib/supabaseSync';
+import { translations } from '../i18n/translations';
 
 const initialBookings = [
   {
@@ -163,6 +164,46 @@ export const AppProvider = ({ children }) => {
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // Multilingual State: 'ar' | 'fr' | 'en'
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem('7avelty_lang');
+    return saved && ['ar', 'fr', 'en'].includes(saved) ? saved : 'ar';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('7avelty_lang', language);
+    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
+  }, [language]);
+
+  const changeLanguage = (newLang) => {
+    if (['ar', 'fr', 'en'].includes(newLang)) {
+      setLanguage(newLang);
+    }
+  };
+
+  const t = (path, fallback = '') => {
+    if (!path) return fallback;
+    const keys = path.split('.');
+    let current = translations[language] || translations.ar;
+    for (const k of keys) {
+      if (current && current[k] !== undefined) {
+        current = current[k];
+      } else {
+        let arFallback = translations.ar;
+        for (const fbKey of keys) {
+          if (arFallback && arFallback[fbKey] !== undefined) {
+            arFallback = arFallback[fbKey];
+          } else {
+            return fallback || path;
+          }
+        }
+        return arFallback;
+      }
+    }
+    return current || fallback || path;
   };
 
   // Toast Notification
@@ -754,6 +795,10 @@ export const AppProvider = ({ children }) => {
         setIsBudgetCalculatorOpen,
         theme,
         toggleTheme,
+        language,
+        changeLanguage,
+        t,
+        dir: language === 'ar' ? 'rtl' : 'ltr',
         promoCodes,
         applyPromoCode,
         addPromoCode,

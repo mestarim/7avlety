@@ -22,7 +22,8 @@ const BookingTrackerModal = () => {
     setIsTrackerModalOpen, 
     lookupBooking, 
     setInvoiceModalBooking,
-    settings 
+    settings,
+    t 
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,11 +54,11 @@ const BookingTrackerModal = () => {
   };
 
   const paymentLabels = {
-    bankily: 'تطبيق بنكيلي',
-    seddad: 'تطبيق السداد',
-    masrvi: 'تطبيق مصرفي',
-    click: 'خدمة كليك',
-    cash: 'دفع نقدي عند المعاينة'
+    bankily: t('booking.bankily', 'بنكيلي (Bankily)'),
+    seddad: t('booking.seddad', 'السداد (Seddad)'),
+    masrvi: t('booking.masrvi', 'مصرفي (Masrvi)'),
+    click: t('booking.click', 'كليك (Click)'),
+    cash: t('booking.cash', 'دفع نقدي')
   };
 
   return (
@@ -69,8 +70,8 @@ const BookingTrackerModal = () => {
               <CalendarCheck2 size={24} className="text-primary" />
             </div>
             <div>
-              <h3 className="modal-title">تتبع حالة الحجز</h3>
-              <p className="modal-subtitle">ابحث برقم الحجز (مثل BK-1001) أو برقم هاتفك المسجل</p>
+              <h3 className="modal-title">{t('tracker.title', 'تتبع حالة الحجز')}</h3>
+              <p className="modal-subtitle">{t('tracker.subtitle', 'ابحث برقم الحجز (مثل BK-1001) أو برقم هاتفك المسجل')}</p>
             </div>
           </div>
           <button 
@@ -89,7 +90,7 @@ const BookingTrackerModal = () => {
             <input
               type="text"
               className="tracker-input"
-              placeholder="اكتب رقم الحجز (BK-1001) أو رقم هاتفك..."
+              placeholder={t('tracker.inputPlaceholder', 'اكتب رقم الحجز (BK-1001) أو رقم هاتفك...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
@@ -101,7 +102,7 @@ const BookingTrackerModal = () => {
             )}
           </div>
           <button type="submit" className="btn btn-primary tracker-submit-btn">
-            بحث وتتبع
+            {t('tracker.searchBtn', 'بحث وتتبع')}
           </button>
         </form>
 
@@ -110,8 +111,8 @@ const BookingTrackerModal = () => {
           {hasSearched && results.length === 0 && (
             <div className="tracker-empty-state">
               <AlertCircle size={40} className="text-muted" />
-              <h4>لم يتم العثور على أي حجز مطابق</h4>
-              <p>تأكد من كتابة رقم الحجز بالشكل الصحيح أو رقم الهاتف المستخدم عند التسجيل.</p>
+              <h4>{t('tracker.noResultsTitle', 'لم يتم العثور على أي حجز مطابق')}</h4>
+              <p>{t('tracker.noResultsDesc', 'تأكد من كتابة رقم الحجز بالشكل الصحيح أو رقم الهاتف المستخدم عند التسجيل.')}</p>
             </div>
           )}
 
@@ -124,23 +125,23 @@ const BookingTrackerModal = () => {
               <div key={booking.id} className={`tracker-card status-${booking.status}`}>
                 <div className="tracker-card-top">
                   <div className="tracker-booking-id">
-                    <span className="id-label">رقم الحجز:</span>
+                    <span className="id-label">{t('tracker.bookingNumber', 'رقم الحجز:')}</span>
                     <span className="id-value font-bold">{booking.id}</span>
                   </div>
 
                   {isPending && (
                     <span className="tracker-status-pill status-pending">
-                      <Clock size={14} /> قيد التدقيق والمراجعة
+                      <Clock size={14} /> {t('tracker.pendingStatus', 'قيد التدقيق والمراجعة')}
                     </span>
                   )}
                   {isConfirmed && (
                     <span className="tracker-status-pill status-confirmed">
-                      <CheckCircle2 size={14} /> تم التأكيد رسمياً ✅
+                      <CheckCircle2 size={14} /> {t('tracker.confirmedStatus', 'تم التأكيد رسمياً ✅')}
                     </span>
                   )}
                   {isCancelled && (
                     <span className="tracker-status-pill status-cancelled">
-                      <XCircle size={14} /> تم الإلغاء
+                      <XCircle size={14} /> {t('tracker.cancelledStatus', 'تم الإلغاء')}
                     </span>
                   )}
                 </div>
@@ -151,31 +152,31 @@ const BookingTrackerModal = () => {
                   <div className="tracker-details-grid">
                     <div className="tracker-detail-item">
                       <Calendar size={15} className="text-primary" />
-                      <span>تاريخ المناسبة: <strong>{booking.date}</strong></span>
+                      <span>{t('tracker.eventDate', 'تاريخ المناسبة:')} <strong>{booking.date}</strong></span>
                     </div>
                     <div className="tracker-detail-item">
                       <MapPin size={15} className="text-primary" />
-                      <span>المدينة: <strong>{booking.city || 'نواكشوط'}</strong></span>
+                      <span>{t('tracker.city', 'المدينة:')} <strong>{booking.city || 'نواكشوط'}</strong></span>
                     </div>
                     <div className="tracker-detail-item">
                       <CreditCard size={15} className="text-primary" />
-                      <span>طريقة الدفع: <strong>{paymentLabels[booking.paymentMethod] || booking.paymentMethod}</strong></span>
+                      <span>{t('tracker.payment', 'طريقة الدفع:')} <strong>{paymentLabels[booking.paymentMethod] || booking.paymentMethod}</strong></span>
                     </div>
                     <div className="tracker-detail-item">
                       <Sparkles size={15} className="text-primary" />
-                      <span>المبلغ الإجمالي: <strong className="text-primary">{Number(booking.price).toLocaleString()} {settings.currency}</strong></span>
+                      <span>{t('tracker.totalAmount', 'المبلغ الإجمالي:')} <strong className="text-primary">{Number(booking.price).toLocaleString()} {settings.currency}</strong></span>
                     </div>
                   </div>
 
                   {booking.paymentRef && (
                     <div className="tracker-ref-note">
-                      <span>مرجع الدفع:</span> <code>{booking.paymentRef}</code>
+                      <span>{t('tracker.refNote', 'مرجع الدفع:')}</span> <code>{booking.paymentRef}</code>
                     </div>
                   )}
 
                   {booking.notes && (
                     <div className="tracker-customer-notes">
-                      <strong>ملاحظاتك:</strong> {booking.notes}
+                      <strong>{t('tracker.customerNotes', 'ملاحظاتك:')}</strong> {booking.notes}
                     </div>
                   )}
                 </div>
@@ -189,7 +190,7 @@ const BookingTrackerModal = () => {
                       setInvoiceModalBooking(booking);
                     }}
                   >
-                    <FileText size={15} /> عرض الفاتورة والطباعة
+                    <FileText size={15} /> {t('booking.viewInvoice', 'عرض وطباعة السند / الفاتورة')}
                   </button>
 
                   <button 
@@ -197,7 +198,7 @@ const BookingTrackerModal = () => {
                     className="btn btn-primary btn-sm tracker-whatsapp-btn"
                     onClick={() => handleWhatsAppInquiry(booking)}
                   >
-                    <MessageCircle size={15} /> استفسار واتساب
+                    <MessageCircle size={15} /> {t('tracker.whatsappInquiry', 'استفسار واتساب')}
                   </button>
                 </div>
               </div>

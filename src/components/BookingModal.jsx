@@ -23,7 +23,9 @@ const BookingModal = () => {
     isDateBooked,
     getBookedDates,
     applyPromoCode,
-    settings 
+    settings,
+    t,
+    language 
   } = useApp();
 
   const [formData, setFormData] = useState({
@@ -92,12 +94,12 @@ const BookingModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.customerName || !formData.phone || !formData.date) {
-      alert('يرجى ملء جميع الحقول الإلزامية');
+      alert(t('booking.fillRequired', 'يرجى ملء جميع الحقول الإلزامية'));
       return;
     }
 
     if (isDateConflict) {
-      alert('التاريخ المحدد محجوز بالفعل لهذه الخدمة! يرجى اختيار تاريخ آخر.');
+      alert(t('booking.dateBookedWarning', 'التاريخ المحدد محجوز بالفعل لهذه الخدمة! يرجى اختيار تاريخ آخر.'));
       return;
     }
 
@@ -164,26 +166,26 @@ const BookingModal = () => {
             <div className="success-icon-anim">
               <CheckCircle2 size={68} className="text-success" />
             </div>
-            <h2>تم استلام طلب الحجز بنجاح!</h2>
+            <h2>{t('booking.successTitle', 'تم استلام طلب الحجز بنجاح!')}</h2>
             <p className="text-muted">
-              شكراً لاختيارك منصة حفلتي. تم تسجيل حجزك برقم مرجعي: <strong>{createdBooking.id}</strong>
+              {t('booking.successDesc', 'شكراً لاختيارك منصة حفلتي. تم تسجيل حجزك برقم مرجعي:')} <strong>{createdBooking.id}</strong>
             </p>
 
             <div className="booking-summary-card">
               <div className="summary-row">
-                <span>الخدمة المطلوبة:</span>
+                <span>{t('booking.serviceRequested', 'الخدمة المطلوبة:')}</span>
                 <strong>{createdBooking.serviceTitle}</strong>
               </div>
               <div className="summary-row">
-                <span>تاريخ المناسبة:</span>
+                <span>{t('booking.eventDate', 'تاريخ المناسبة:')}</span>
                 <strong>{createdBooking.date}</strong>
               </div>
               <div className="summary-row">
-                <span>وسيلة الدفع:</span>
+                <span>{t('booking.paymentMethodLabel', 'وسيلة الدفع:')}</span>
                 <strong style={{ textTransform: 'uppercase' }}>{createdBooking.paymentMethod}</strong>
               </div>
               <div className="summary-row">
-                <span>المبلغ الإجمالي:</span>
+                <span>{t('booking.totalAmountLabel', 'المبلغ الإجمالي:')}</span>
                 <strong className="text-primary price-hl">
                   {createdBooking.price.toLocaleString()} {settings.currency}
                 </strong>
@@ -192,10 +194,10 @@ const BookingModal = () => {
 
             <div className="success-actions-row">
               <button className="btn btn-primary" onClick={handleViewInvoice}>
-                <FileText size={18} /> عرض وطباعة السند / الفاتورة
+                <FileText size={18} /> {t('booking.viewInvoice', 'عرض وطباعة السند / الفاتورة')}
               </button>
               <button className="btn btn-outline whatsapp-btn-confirm" onClick={handleWhatsAppBookingConfirm}>
-                <MessageCircle size={18} /> تأكيد فوري عبر واتساب
+                <MessageCircle size={18} /> {t('booking.whatsappConfirm', 'تأكيد فوري عبر واتساب')}
               </button>
             </div>
           </div>
@@ -203,7 +205,7 @@ const BookingModal = () => {
           /* Booking Form */
           <>
             <div className="booking-header">
-              <h3>طلب حجز وتأكيد الخدمة</h3>
+              <h3>{t('booking.bookingHeader', 'طلب حجز وتأكيد الخدمة')}</h3>
               <div className="booking-item-badge">
                 <span>{bookingModalItem.title}</span>
                 <strong className="text-primary">
@@ -216,18 +218,18 @@ const BookingModal = () => {
               {/* Personal Info */}
               <div className="form-grid-2">
                 <div className="form-group">
-                  <label><User size={15} /> الاسم الكامل *</label>
+                  <label><User size={15} /> {t('booking.clientName', 'الاسم الكامل *')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: محمد ولد أحمد"
+                    placeholder={language === 'ar' ? 'مثال: محمد ولد أحمد' : (language === 'fr' ? 'ex: Mohamed Ould Ahmed' : 'e.g. Mohamed Ahmed')}
                     value={formData.customerName}
                     onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label><Phone size={15} /> رقم الهاتف (واتساب) *</label>
+                  <label><Phone size={15} /> {t('booking.clientPhone', 'رقم الهاتف (واتساب) *')}</label>
                   <input
                     type="tel"
                     required
@@ -241,20 +243,20 @@ const BookingModal = () => {
               {/* City & Date */}
               <div className="form-grid-2">
                 <div className="form-group">
-                  <label><MapPin size={15} /> المدينة *</label>
+                  <label><MapPin size={15} /> {t('booking.eventCity', 'المدينة *')}</label>
                   <select
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   >
-                    <option value="نواكشوط">نواكشوط</option>
-                    <option value="نواذيبو">نواذيبو</option>
-                    <option value="روصو">روصو</option>
-                    <option value="كيفه">كيفه</option>
+                    <option value="نواكشوط">{t('hero.cities.nouakchott', 'نواكشوط')}</option>
+                    <option value="نواذيبو">{t('hero.cities.nouadhibou', 'نواذيبو')}</option>
+                    <option value="روصو">{t('hero.cities.rosso', 'روصو')}</option>
+                    <option value="كيفه">{t('hero.cities.kiffa', 'كيفه')}</option>
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label><Calendar size={15} /> تاريخ الفعالية / الحجز *</label>
+                  <label><Calendar size={15} /> {t('booking.eventDate', 'تاريخ الفعالية / الحجز *')}</label>
                   <input
                     type="date"
                     required
@@ -265,12 +267,12 @@ const BookingModal = () => {
                   />
                   {isDateConflict && (
                     <div className="date-conflict-warning">
-                      <AlertCircle size={14} /> هذا التاريخ محجوز مسبقاً! يرجى اختيار تاريخ بديل.
+                      <AlertCircle size={14} /> {t('booking.dateBookedWarning', 'هذا التاريخ محجوز مسبقاً! يرجى اختيار تاريخ بديل.')}
                     </div>
                   )}
                   {bookedDates.length > 0 && !formData.date && (
                     <span className="text-muted" style={{ fontSize: '11px' }}>
-                      محجوز سابقاً: {bookedDates.join('، ')}
+                      {language === 'ar' ? 'محجوز سابقاً: ' : (language === 'fr' ? 'Déjà réservé : ' : 'Already booked: ')}{bookedDates.join('، ')}
                     </span>
                   )}
                 </div>
@@ -279,15 +281,15 @@ const BookingModal = () => {
               {/* Mauritanian Payment Gateway Selector */}
               <div className="payment-gateway-section">
                 <label className="section-label">
-                  <CreditCard size={15} /> طريقة الدفع وتأكيد الحجز:
+                  <CreditCard size={15} /> {t('booking.paymentMethod', 'طريقة الدفع وتأكيد الحجز:')}
                 </label>
                 <div className="payment-options-grid">
                   {[
-                    { id: 'bankily', name: 'بنكيلي (Bankily)', desc: 'تطبيق البنك الشعبي موريتانيا' },
-                    { id: 'seddad', name: 'السداد (Seddad)', desc: 'تطبيق بنك المعاملات الإسلامية' },
-                    { id: 'masrvi', name: 'مصرفي (Masrvi)', desc: 'تطبيق بنك التجارة والمعاملات' },
-                    { id: 'click', name: 'كليك (Click)', desc: 'البريد الموريتاني' },
-                    { id: 'cash', name: 'دفع نقدي', desc: 'معاينة ودفع خلال 24 ساعة' }
+                    { id: 'bankily', name: t('booking.bankily', 'بنكيلي (Bankily)'), desc: t('booking.bankilyDesc', 'تطبيق البنك الشعبي موريتانيا') },
+                    { id: 'seddad', name: t('booking.seddad', 'السداد (Seddad)'), desc: t('booking.seddadDesc', 'تطبيق بنك المعاملات الإسلامية') },
+                    { id: 'masrvi', name: t('booking.masrvi', 'مصرفي (Masrvi)'), desc: t('booking.masrviDesc', 'تطبيق بنك التجارة والمعاملات') },
+                    { id: 'click', name: t('booking.click', 'كليك (Click)'), desc: t('booking.clickDesc', 'البريد الموريتاني') },
+                    { id: 'cash', name: t('booking.cash', 'دفع نقدي'), desc: t('booking.cashDesc', 'معاينة ودفع خلال 24 ساعة') }
                   ].map((method) => (
                     <div
                       key={method.id}
@@ -309,16 +311,16 @@ const BookingModal = () => {
                 {paymentMethod !== 'cash' && (
                   <div className="bank-account-box">
                     <p>
-                      يرجى تحويل العربون (أو المبلغ كاملاً) إلى حسابنا عبر <strong>{paymentMethod.toUpperCase()}</strong>:
+                      {t('booking.transferInstructions', 'يرجى تحويل العربون (أو المبلغ كاملاً) إلى حسابنا عبر')} <strong>{paymentMethod.toUpperCase()}</strong>:
                     </p>
                     <div className="account-number-pill">
-                      <span>رقم الحساب / الهاتف:</span>
+                      <span>{t('booking.accountNumber', 'رقم الحساب / الهاتف:')}</span>
                       <strong>{settings.phone}</strong>
                     </div>
                     <div className="form-group" style={{ marginTop: '10px' }}>
                       <input
                         type="text"
-                        placeholder="أدخل رقم عملية التحويل (Reference Number)..."
+                        placeholder={t('booking.refPlaceholder', 'أدخل رقم عملية التحويل (Reference Number)...')}
                         value={paymentRef}
                         onChange={(e) => setPaymentRef(e.target.value)}
                       />
@@ -333,18 +335,18 @@ const BookingModal = () => {
                   <Tag size={16} className="text-primary" />
                   <input
                     type="text"
-                    placeholder="هل لديك كود خصم؟ (مثلاً: AROSS2026)"
+                    placeholder={t('booking.promoPlaceholder', 'هل لديك كود خصم؟ (مثلاً: AROSS2026)')}
                     value={promoCodeInput}
                     onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
                   />
                   <button type="button" className="btn btn-outline btn-sm" onClick={handleApplyPromo}>
-                    تطبيق
+                    {t('booking.applyPromo', 'تطبيق')}
                   </button>
                 </div>
 
                 {appliedPromo && (
                   <div className="promo-success-alert">
-                    <CheckCircle2 size={15} /> تم تطبيق الكوبون <strong>{appliedPromo.code}</strong>! خصم {appliedPromo.discountAmount.toLocaleString()} {settings.currency}
+                    <CheckCircle2 size={15} /> {language === 'ar' ? 'تم تطبيق الكوبون' : (language === 'fr' ? 'Coupon appliqué' : 'Coupon applied')} <strong>{appliedPromo.code}</strong>! {language === 'ar' ? 'خصم' : (language === 'fr' ? 'Remise' : 'Discount')} {appliedPromo.discountAmount.toLocaleString()} {settings.currency}
                   </div>
                 )}
                 {promoError && (
@@ -357,17 +359,17 @@ const BookingModal = () => {
               {/* Price Breakdown */}
               <div className="price-breakdown-card">
                 <div className="price-row">
-                  <span>السعر الأساسي:</span>
+                  <span>{t('booking.basePrice', 'السعر الأساسي:')}</span>
                   <span>{basePrice.toLocaleString()} {settings.currency}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="price-row discount-row text-success">
-                    <span>الخصم المطبق:</span>
+                    <span>{t('booking.appliedDiscount', 'الخصم المطبق:')}</span>
                     <span>- {discountAmount.toLocaleString()} {settings.currency}</span>
                   </div>
                 )}
                 <div className="price-row total-row">
-                  <strong>المبلغ المطلوب دفعه:</strong>
+                  <strong>{t('booking.amountDue', 'المبلغ المطلوب دفعه:')}</strong>
                   <strong className="text-primary total-amount">
                     {finalPrice.toLocaleString()} {settings.currency}
                   </strong>
@@ -376,10 +378,10 @@ const BookingModal = () => {
 
               {/* Notes */}
               <div className="form-group">
-                <label>ملاحظات أو متطلبات خاصة (اختياري)</label>
+                <label>{t('booking.notes', 'ملاحظات أو متطلبات خاصة (اختياري)')}</label>
                 <textarea
                   rows="2"
-                  placeholder="أي تفاصيل ترغب بإضافتها أو ترتيبات خاصة ترغب بها..."
+                  placeholder={t('booking.notesPlaceholder', 'أي تفاصيل ترغب بإضافتها أو ترتيبات خاصة ترغب بها...')}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 ></textarea>
@@ -391,10 +393,10 @@ const BookingModal = () => {
                   className="btn btn-primary btn-lg btn-block"
                   disabled={isDateConflict}
                 >
-                  <CheckCircle2 size={18} /> تأكيد وإرسال طلب الحجز
+                  <CheckCircle2 size={18} /> {t('booking.confirmBooking', 'تأكيد وإرسال طلب الحجز')}
                 </button>
                 <button type="button" className="btn btn-outline btn-block" onClick={handleClose}>
-                  إلغاء
+                  {t('booking.cancel', 'إلغاء')}
                 </button>
               </div>
             </form>

@@ -28,7 +28,9 @@ const ListingDetailsModal = () => {
     getBookedDates,
     listings,
     addReviewToListing,
-    showToast
+    showToast,
+    t,
+    language 
   } = useApp();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -45,7 +47,7 @@ const ListingDetailsModal = () => {
   const handleReviewSubmit = (e) => {
     e.preventDefault();
     if (!newReview.author.trim() || !newReview.comment.trim()) {
-      alert('يرجى ملء جميع حقول التقييم');
+      alert(language === 'ar' ? 'يرجى ملء جميع حقول التقييم' : (language === 'fr' ? 'Veuillez remplir tous les champs de l’avis' : 'Please fill all review fields'));
       return;
     }
     addReviewToListing(detailsModalItem.id, newReview);
@@ -75,7 +77,7 @@ const ListingDetailsModal = () => {
   };
 
   const handleWhatsApp = () => {
-    const dateText = selectedDate ? `في تاريخ: ${selectedDate}` : '';
+    const dateText = selectedDate ? (language === 'ar' ? `في تاريخ: ${selectedDate}` : `Date: ${selectedDate}`) : '';
     const text = encodeURIComponent(
       `مرحباً منصة حفلتي، أود الاستفسار والحجز لـ: "${detailsModalItem.title}" (${detailsModalItem.price}) ${dateText}`
     );
@@ -83,7 +85,9 @@ const ListingDetailsModal = () => {
   };
 
   const handleShare = async () => {
-    const shareText = `شاهد خدمة "${detailsModalItem.title}" (${detailsModalItem.location}) بسعر ${detailsModalItem.price} على منصة حفلتي للمناسبات:`;
+    const shareText = language === 'ar' 
+      ? `شاهد خدمة "${detailsModalItem.title}" (${detailsModalItem.location}) بسعر ${detailsModalItem.price} على منصة حفلتي للمناسبات:`
+      : `Découvrez "${detailsModalItem.title}" (${detailsModalItem.location}) à ${detailsModalItem.price} sur 7avelty :`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -98,7 +102,7 @@ const ListingDetailsModal = () => {
     }
     if (navigator.clipboard) {
       navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-      if (showToast) showToast('تم نسخ رابط الخدمة بنجاح للمشاركة! 📋', 'success');
+      if (showToast) showToast(language === 'ar' ? 'تم نسخ رابط الخدمة بنجاح للمشاركة! 📋' : (language === 'fr' ? 'Lien copié avec succès ! 📋' : 'Link copied successfully! 📋'), 'success');
     }
   };
 
@@ -112,7 +116,7 @@ const ListingDetailsModal = () => {
             type="button"
             className="btn-fav-round share-modal-btn"
             onClick={handleShare}
-            title="مشاركة هذه الخدمة"
+            title={t('details.shareTitle', 'مشاركة هذه الخدمة')}
             aria-label="مشاركة"
           >
             <Share2 size={18} />
@@ -120,7 +124,7 @@ const ListingDetailsModal = () => {
           <button 
             className={`btn-fav-round ${wish ? 'active' : ''}`}
             onClick={() => toggleWishlist(detailsModalItem.id)}
-            title={wish ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+            title={wish ? t('listings.removeFav', 'إزالة من المفضلة') : t('listings.saveFav', 'إضافة إلى المفضلة')}
           >
             <Heart size={20} fill={wish ? '#ef4444' : 'none'} color={wish ? '#ef4444' : 'currentColor'} />
           </button>
@@ -197,17 +201,17 @@ const ListingDetailsModal = () => {
             {detailsModalItem.capacity && (
               <div className="spec-pill">
                 <Users size={16} className="text-primary" />
-                <span>السعة: <strong>{detailsModalItem.capacity} شخص</strong></span>
+                <span>{t('listings.capacityLabel', 'السعة:')} <strong>{detailsModalItem.capacity} {t('listings.guests', 'شخص')}</strong></span>
               </div>
             )}
             <div className="spec-pill">
-              <span className="text-muted">المدينة:</span>
+              <span className="text-muted">{t('listings.cityTitle', 'المدينة:')}</span>
               <strong>{detailsModalItem.city || 'نواكشوط'}</strong>
             </div>
           </div>
 
           <div className="details-price-banner">
-            <span className="text-muted">السعر التقديري:</span>
+            <span className="text-muted">{language === 'ar' ? 'السعر التقديري:' : (language === 'fr' ? 'Prix estimé :' : 'Estimated Price:')}</span>
             <strong className="text-primary price-val">{detailsModalItem.price}</strong>
           </div>
 
@@ -219,15 +223,15 @@ const ListingDetailsModal = () => {
 
           {/* Features Grid */}
           <div className="details-features-section">
-            <h4>المزايا والخدمات المتضمنة:</h4>
+            <h4>{language === 'ar' ? 'المزايا والخدمات المتضمنة:' : (language === 'fr' ? 'Prestations & Avantages inclus :' : 'Features & Services Included:')}</h4>
             <div className="features-grid">
               {(currentListing.amenities || [
-                'تكييف وتجهيز فاخر',
-                'طاقم خدمة وضيافة متخصص',
-                'إضاءة ومؤثرات صوتية',
-                'مواقف سيارات آمنة',
-                'خيارات مرنة لتعديل المواعيد',
-                'دعم فني وإشراف مباشر'
+                language === 'ar' ? 'تكييف وتجهيز فاخر' : (language === 'fr' ? 'Climatisation & Finitions haut de gamme' : 'Luxury Air Conditioning & Setup'),
+                language === 'ar' ? 'طاقم خدمة وضيافة متخصص' : (language === 'fr' ? 'Personnel de service et accueil qualifié' : 'Dedicated Hospitality & Service Crew'),
+                language === 'ar' ? 'إضاءة ومؤثرات صوتية' : (language === 'fr' ? 'Éclairage d’ambiance et effets sonores' : 'Ambient Lighting & Sound Effects'),
+                language === 'ar' ? 'مواقف سيارات آمنة' : (language === 'fr' ? 'Parking surveillé et sécurisé' : 'Secure Dedicated Parking'),
+                language === 'ar' ? 'خيارات مرنة لتعديل المواعيد' : (language === 'fr' ? 'Flexibilité de modification de date' : 'Flexible Date Adjustment Options'),
+                language === 'ar' ? 'دعم فني وإشراف مباشر' : (language === 'fr' ? 'Supervision technique continue sur place' : 'On-site Technical Supervision & Support')
               ]).map((feature, i) => (
                 <div key={i} className="feature-item">
                   <CheckCircle size={15} className="text-primary" /> {feature}
@@ -240,11 +244,11 @@ const ListingDetailsModal = () => {
           <div className="details-reviews-section">
             <div className="reviews-section-header">
               <div className="reviews-title-wrap">
-                <h4>آراء وتقييمات العملاء</h4>
+                <h4>{t('details.reviewsTitle', 'آراء وتقييمات العملاء')}</h4>
                 <div className="reviews-summary-badge">
                   <Star size={15} fill="#cba153" color="#cba153" />
                   <strong>{currentListing.rating || 5.0}</strong>
-                  <span className="text-muted">({reviewsList.length} تقييم)</span>
+                  <span className="text-muted">({reviewsList.length} {language === 'ar' ? 'تقييم' : (language === 'fr' ? 'avis' : 'reviews')})</span>
                 </div>
               </div>
               <button
@@ -252,16 +256,16 @@ const ListingDetailsModal = () => {
                 className="btn btn-outline btn-sm"
                 onClick={() => setShowReviewForm(!showReviewForm)}
               >
-                {showReviewForm ? 'إلغاء' : '+ أضف تجربتك وتقييمك'}
+                {showReviewForm ? t('booking.cancel', 'إلغاء') : (language === 'ar' ? '+ أضف تجربتك وتقييمك' : (language === 'fr' ? '+ Ajouter un avis' : '+ Add your review'))}
               </button>
             </div>
 
             {/* Review Submission Form */}
             {showReviewForm && (
               <form onSubmit={handleReviewSubmit} className="add-review-box">
-                <h5>شاركنا رأيك في {currentListing.title}</h5>
+                <h5>{language === 'ar' ? `شاركنا رأيك في ${currentListing.title}` : (language === 'fr' ? `Votre avis sur ${currentListing.title}` : `Your feedback on ${currentListing.title}`)}</h5>
                 <div className="rating-select-row">
-                  <span className="rating-label">درجة التقييم:</span>
+                  <span className="rating-label">{language === 'ar' ? 'درجة التقييم:' : (language === 'fr' ? 'Votre note :' : 'Your rating:')}</span>
                   <div className="star-picker">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -269,7 +273,7 @@ const ListingDetailsModal = () => {
                         type="button"
                         className="star-pick-btn"
                         onClick={() => setNewReview({ ...newReview, rating: star })}
-                        title={`${star} نجوم`}
+                        title={`${star} ${language === 'ar' ? 'نجوم' : (language === 'fr' ? 'étoiles' : 'stars')}`}
                       >
                         <Star
                           size={22}
@@ -285,7 +289,7 @@ const ListingDetailsModal = () => {
                   <input
                     type="text"
                     required
-                    placeholder="اسمك الكريم..."
+                    placeholder={t('details.yourName', 'اسمك الكريم...')}
                     value={newReview.author}
                     onChange={(e) => setNewReview({ ...newReview, author: e.target.value })}
                   />
@@ -295,14 +299,14 @@ const ListingDetailsModal = () => {
                   <textarea
                     rows="2"
                     required
-                    placeholder="اكتب انطباعك عن الخدمة وجودة التنظيم..."
+                    placeholder={t('details.yourComment', 'اكتب انطباعك عن الخدمة وجودة التنظيم...')}
                     value={newReview.comment}
                     onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                   ></textarea>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-sm">
-                  نشر التقييم الآن ⭐
+                  {t('details.submitReview', 'نشر التقييم')} ⭐
                 </button>
               </form>
             )}
@@ -311,7 +315,7 @@ const ListingDetailsModal = () => {
             <div className="reviews-list">
               {reviewsList.length === 0 ? (
                 <p className="no-reviews-note text-muted">
-                  كن أول من يقيّم هذه الخدمة ويشارك تجربته مع الآخرين!
+                  {t('details.noReviews', 'كن أول من يقيّم هذه الخدمة ويشارك تجربته مع الآخرين!')}
                 </p>
               ) : (
                 reviewsList.map((rev) => (
@@ -343,7 +347,7 @@ const ListingDetailsModal = () => {
           <div className="availability-checker-box">
             <div className="avail-header">
               <Calendar size={18} className="text-primary" />
-              <h4>التحقق من توفر التاريخ:</h4>
+              <h4>{t('details.dateCheckTitle', 'التحقق من توفر التاريخ:')}</h4>
             </div>
             <div className="avail-input-group">
               <input 
@@ -357,11 +361,11 @@ const ListingDetailsModal = () => {
                 <div className={`avail-status-result ${isSelectedDateBooked ? 'booked' : 'available'}`}>
                   {isSelectedDateBooked ? (
                     <>
-                      <AlertCircle size={16} /> هذا التاريخ محجوز مسبقاً! يرجى اختيار تاريخ آخر
+                      <AlertCircle size={16} /> {t('details.dateBusy', 'هذا التاريخ محجوز مسبقاً! يرجى اختيار تاريخ آخر')}
                     </>
                   ) : (
                     <>
-                      <CheckCircle size={16} /> هذا التاريخ متاح للحجز الفوري!
+                      <CheckCircle size={16} /> {t('details.dateAvailable', 'هذا التاريخ متاح للحجز الفوري! ✨')}
                     </>
                   )}
                 </div>
@@ -371,7 +375,7 @@ const ListingDetailsModal = () => {
             {bookedDates.length > 0 && (
               <div className="booked-dates-list-tag">
                 <span className="text-muted" style={{ fontSize: '12px' }}>
-                  ملاحظة: التواريخ التالية محجوزة بالفعل لهذه الخدمة:
+                  {language === 'ar' ? 'ملاحظة: التواريخ التالية محجوزة بالفعل لهذه الخدمة:' : (language === 'fr' ? 'Note : Les dates suivantes sont déjà réservées :' : 'Note: The following dates are already booked:')}
                 </span>
                 <div className="booked-tags-wrap">
                   {bookedDates.map((d, i) => (
@@ -389,14 +393,14 @@ const ListingDetailsModal = () => {
               disabled={isSelectedDateBooked}
               style={{ flex: 2 }}
             >
-              <CalendarDays size={18} /> احجز هذه الخدمة الآن
+              <CalendarDays size={18} /> {t('details.bookService', 'احجز هذه الخدمة الآن')}
             </button>
             <button 
               className="btn btn-outline" 
               onClick={handleWhatsApp} 
               style={{ flex: 1 }}
             >
-              <MessageCircle size={18} /> تواصل واتساب
+              <MessageCircle size={18} /> {t('details.whatsappContact', 'تواصل واتساب')}
             </button>
           </div>
         </div>

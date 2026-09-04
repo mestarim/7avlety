@@ -6,7 +6,8 @@ const AdminLoginModal = () => {
   const { 
     isAdminLoginModalOpen, 
     setIsAdminLoginModalOpen, 
-    loginAdmin 
+    loginAdmin,
+    language 
   } = useApp();
 
   const [pin, setPin] = useState('');
@@ -57,9 +58,11 @@ const AdminLoginModal = () => {
         </div>
 
         <div className="admin-login-body">
-          <h3 className="admin-login-title">الدخول إلى لوحة تحكم الإدارة</h3>
+          <h3 className="admin-login-title">
+            {language === 'ar' ? 'الدخول إلى لوحة تحكم الإدارة' : (language === 'fr' ? 'Accès à l’administration' : 'Admin Control Panel Access')}
+          </h3>
           <p className="admin-login-desc">
-            يرجى إدخال الرمز السري (PIN) الخاص بمدير منصة حفلتي للمتابعة
+            {language === 'ar' ? 'يرجى إدخال الرمز السري (PIN) الخاص بمدير منصة حفلتي للمتابعة' : (language === 'fr' ? 'Veuillez saisir votre code PIN administrateur pour continuer' : 'Please enter your administrator PIN to continue')}
           </p>
 
           {errorMsg && (
@@ -126,13 +129,18 @@ const AdminLoginModal = () => {
 
             <div className="admin-login-actions">
               <button type="submit" className="btn btn-primary w-full admin-submit-btn">
-                <ShieldCheck size={18} /> فتح لوحة الإدارة
+                <ShieldCheck size={18} /> {language === 'ar' ? 'فتح لوحة الإدارة' : (language === 'fr' ? 'Accéder à l’administration' : 'Access Admin Dashboard')}
               </button>
             </div>
           </form>
 
           <div className="admin-login-hint">
-            💡 الرمز السري الافتراضي للنظام هو: <strong>7777</strong> (يمكنك تغييره من الإعدادات لاحقاً)
+            {language === 'ar' 
+              ? <>💡 الرمز السري الافتراضي للنظام هو: <strong>7777</strong> (يمكنك تغييره من الإعدادات لاحقاً)</>
+              : (language === 'fr'
+                ? <>💡 Le code PIN par défaut est : <strong>7777</strong> (modifiable dans les paramètres)</>
+                : <>💡 Default system PIN is: <strong>7777</strong> (can be changed in settings)</>
+              )}
           </div>
         </div>
       </div>
