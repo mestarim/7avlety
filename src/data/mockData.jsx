@@ -19,14 +19,14 @@ export const getCategoryIcon = (iconName, size = 28) => {
 };
 
 export const categoriesData = [
-  { id: 1, title: 'قاعات الأفراح', iconName: 'Building2', icon: <Building2 size={28} /> },
-  { id: 2, title: 'الفنادق والمؤتمرات', iconName: 'Hotel', icon: <Hotel size={28} /> },
-  { id: 3, title: 'معدات صوت ودي جي', iconName: 'Speaker', icon: <Speaker size={28} /> },
-  { id: 4, title: 'سيارات زفاف', iconName: 'Car', icon: <Car size={28} /> },
-  { id: 5, title: 'أواني ومعدات ضيافة', iconName: 'Utensils', icon: <Utensils size={28} /> },
-  { id: 6, title: 'الهدايا والسلال', iconName: 'Gift', icon: <Gift size={28} /> },
-  { id: 7, title: 'تصوير وتوثيق', iconName: 'Camera', icon: <Camera size={28} /> },
-  { id: 8, title: 'بكجات متكاملة', iconName: 'Sparkles', icon: <Sparkles size={28} /> },
+  { id: 1, title: 'قاعات الأفراح', iconName: 'Building2' },
+  { id: 2, title: 'الفنادق والمؤتمرات', iconName: 'Hotel' },
+  { id: 3, title: 'معدات صوت ودي جي', iconName: 'Speaker' },
+  { id: 4, title: 'سيارات زفاف', iconName: 'Car' },
+  { id: 5, title: 'أواني ومعدات ضيافة', iconName: 'Utensils' },
+  { id: 6, title: 'الهدايا والسلال', iconName: 'Gift' },
+  { id: 7, title: 'تصوير وتوثيق', iconName: 'Camera' },
+  { id: 8, title: 'بكجات متكاملة', iconName: 'Sparkles' },
 ];
 
 export const listingsData = [

@@ -213,7 +213,19 @@ export const AppProvider = ({ children }) => {
   const [categories, setCategories] = useState(() => {
     const saved = localStorage.getItem('7avelty_categories');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((c) => ({
+            id: c.id,
+            title: c.title || c.name || '',
+            name: c.name || c.title || '',
+            iconName: typeof c.iconName === 'string' ? c.iconName : 'Sparkles',
+            count: Number(c.count) || 0,
+            popular: Boolean(c.popular)
+          }));
+        }
+      } catch (e) { console.error(e); }
     }
     return defaultCategories;
   });

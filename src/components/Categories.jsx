@@ -39,7 +39,7 @@ const Categories = () => {
                 onClick={() => handleCategoryClick(cat.title)}
               >
                 <div className="category-icon">
-                  {cat.icon || getCategoryIcon(cat.iconName)}
+                  {getCategoryIcon(cat.iconName)}
                 </div>
                 <h3 className="category-title">{cat.title}</h3>
                 <span className="category-action-text text-primary">تصفح العروض ←</span>

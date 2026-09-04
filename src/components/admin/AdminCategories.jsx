@@ -147,7 +147,7 @@ const AdminCategories = () => {
             <div key={cat.id} className="admin-cat-card">
               <div className="admin-cat-top-row">
                 <div className="admin-cat-icon">
-                  {cat.icon || getCategoryIcon(cat.iconName, 26)}
+                  {getCategoryIcon(cat.iconName, 26)}
                 </div>
                 <div className="admin-cat-card-actions">
                   <button
